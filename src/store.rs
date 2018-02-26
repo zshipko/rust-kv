@@ -21,9 +21,14 @@ impl Bucket {
 }
 
 impl Store {
-    pub fn new(config: Config) -> Result<Store, Error> {
+    pub fn new(mut config: Config) -> Result<Store, Error> {
         let _ = fs::create_dir_all(&config.path);
         let mut builder = lmdb::Environment::new();
+
+        if config.readonly {
+            config.flags.insert(lmdb::READ_ONLY)
+        }
+
         let env = builder
             .set_flags(config.flags)
             .set_max_readers(config.max_readers)

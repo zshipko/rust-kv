@@ -6,6 +6,7 @@ mod txn;
 mod store;
 mod cursor;
 mod types;
+#[cfg(test)] mod test;
 
 pub use config::Config;
 pub use error::Error;

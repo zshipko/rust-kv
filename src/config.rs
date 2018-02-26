@@ -2,14 +2,13 @@ use lmdb;
 
 use std::path::{PathBuf, Path};
 
-use error::Error;
-
 pub struct Config {
     pub map_size: usize,
     pub max_readers: u32,
     pub flags: lmdb::EnvironmentFlags,
     pub path: PathBuf,
-    pub buckets: Vec<String>
+    pub buckets: Vec<String>,
+    pub readonly: bool
 }
 
 impl Config {
@@ -19,7 +18,8 @@ impl Config {
             max_readers: 5,
             flags: lmdb::EnvironmentFlags::empty(),
             path: p.as_ref().to_path_buf(),
-            buckets: Vec::new()
+            buckets: Vec::new(),
+            readonly: false
         }
     }
 
@@ -39,9 +39,12 @@ impl Config {
         self.path = p.as_ref().to_path_buf()
     }
 
-    pub fn bucket<S: AsRef<str>>(&mut self, name: S) -> Result<(), Error> {
+    pub fn bucket<S: AsRef<str>>(&mut self, name: S) {
         self.buckets.push(String::from(name.as_ref()));
-        Ok(())
+    }
+
+    pub fn readonly(&mut self, readonly: bool) {
+        self.readonly = readonly;
     }
 }
 
