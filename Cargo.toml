@@ -1,0 +1,7 @@
+[package]
+name = "kv"
+version = "0.1.0"
+authors = ["Zach Shipko <zachshipko@gmail.com>"]
+
+[dependencies]
+lmdb = "0.7"
