@@ -12,6 +12,13 @@ pub enum Txn<'env> {
 }
 
 impl <'env> Txn<'env> {
+    pub fn is_read_only(&self) -> bool {
+        match self {
+            &Txn::ReadOnly(_) => true,
+            &Txn::ReadWrite(_) => false
+        }
+    }
+
     pub fn read_only(t: lmdb::RoTransaction<'env>) -> Txn<'env> {
         Txn::ReadOnly(t)
     }
