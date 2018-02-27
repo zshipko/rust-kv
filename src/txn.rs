@@ -29,8 +29,8 @@ impl <'env> RoTxn<'env> {
     }
 
     #[inline]
-    pub fn get<K: AsRef<[u8]>>(&self, bucket: &Bucket, key: &K) -> Result<&[u8], Error> {
-        Ok(self.ro.get(bucket.db(), key)?)
+    pub fn get<K: Key>(&self, bucket: &Bucket, key: K) -> Result<&[u8], Error> {
+        Ok(self.ro.get(bucket.db(), &key)?)
     }
 
     #[inline]
@@ -62,18 +62,17 @@ impl <'env> RwTxn<'env> {
 
     #[inline]
     pub fn reserve<'txn, K: Key>(&'txn mut self, bucket: &Bucket, key: K, n: usize) -> Result<&'txn mut [u8], Error> {
-
         Ok(self.rw.reserve(bucket.db(), &key, n, lmdb::WriteFlags::empty())?)
     }
 
     #[inline]
-    pub fn get<K: Key>(&self, bucket: &Bucket, key: &K) -> Result<&[u8], Error> {
-        Ok(self.rw.get(bucket.db(), key)?)
+    pub fn get<K: Key>(&self, bucket: &Bucket, key: K) -> Result<&[u8], Error> {
+        Ok(self.rw.get(bucket.db(), &key)?)
     }
 
     #[inline]
-    pub fn set<K: Key, V: Value>(&mut self, bucket: &Bucket, key: &K, val: &V) -> Result<(), Error> {
-        Ok(self.rw.put(bucket.db(), key, val, lmdb::WriteFlags::empty())?)
+    pub fn set<K: Key, V: Value>(&mut self, bucket: &Bucket, key: K, val: V) -> Result<(), Error> {
+        Ok(self.rw.put(bucket.db(), &key, &val, lmdb::WriteFlags::empty())?)
     }
 
     //#[inline]
@@ -84,8 +83,8 @@ impl <'env> RwTxn<'env> {
     //}
 
     #[inline]
-    pub fn del<K: AsRef<[u8]>>(&mut self, bucket: &Bucket, key: &K) -> Result<(), Error> {
-        Ok(self.rw.del(bucket.db(), key, None)?)
+    pub fn del<K: AsRef<[u8]>>(&mut self, bucket: &Bucket, key: K) -> Result<(), Error> {
+        Ok(self.rw.del(bucket.db(), &key, None)?)
     }
 
     #[inline]
