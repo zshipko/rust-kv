@@ -4,7 +4,8 @@ use lmdb;
 pub enum Error {
     LMDB(lmdb::Error),
     InvalidBucket,
-    NotFound
+    NotFound,
+    ReadOnly
 }
 
 impl From<lmdb::Error> for Error {

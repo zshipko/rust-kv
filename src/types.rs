@@ -2,7 +2,7 @@ pub trait Key: AsRef<[u8]> {
 
 }
 
-pub trait Value: AsRef<[u8]> {
+pub trait Value<'a>: AsRef<[u8]> + From<&'a [u8]> {
 
 }
 
@@ -14,6 +14,6 @@ impl <'a> Key for &'a str {
 
 }
 
-impl <T: AsRef<[u8]>> Value for T {
+impl <'a> Value<'a> for &'a [u8] {
 
 }

@@ -2,7 +2,7 @@ use lmdb;
 
 use config::Config;
 use error::Error;
-use txn::{RoTxn, RwTxn};
+use txn::Txn;
 use std::fs;
 use std::collections::HashMap;
 
@@ -67,15 +67,15 @@ impl Store {
 
 
     #[inline]
-    pub fn ro_txn<'env>(&'env self) -> Result<RoTxn<'env>, Error> {
+    pub fn read_txn<'env>(&'env self) -> Result<Txn<'env>, Error> {
         let txn = self.env.begin_ro_txn()?;
-        Ok(RoTxn::new(txn))
+        Ok(Txn::read_only(txn))
     }
 
     #[inline]
-    pub fn rw_txn<'env>(&'env self) -> Result<RwTxn<'env>, Error> {
+    pub fn write_txn<'env>(&'env self) -> Result<Txn<'env>, Error> {
         let txn = self.env.begin_rw_txn()?;
-        Ok(RwTxn::new(txn))
+        Ok(Txn::read_write(txn))
     }
 
     #[inline]
