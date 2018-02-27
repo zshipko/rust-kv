@@ -2,7 +2,7 @@
 
 //! `kv` is a simple way to embed a key/value store in any application written in Rust
 
-extern crate lmdb;
+extern crate lmdb2 as lmdb;
 
 mod config;
 mod error;
