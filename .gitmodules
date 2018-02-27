@@ -1,0 +1,3 @@
+[submodule "lmdb"]
+	path = lmdb
+	url = https://github.com/zshipko/lmdb-rs

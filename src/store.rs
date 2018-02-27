@@ -32,7 +32,7 @@ impl Store {
         let mut builder = lmdb::Environment::new();
 
         if config.readonly {
-            config.flags.insert(lmdb::READ_ONLY)
+            config.flags.insert(lmdb::EnvironmentFlags::READ_ONLY)
         }
 
         let env = builder
