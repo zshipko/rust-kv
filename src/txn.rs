@@ -55,6 +55,13 @@ impl <'env> Txn<'env> {
         }
     }
 
+    pub fn set_unique<'a, K: Key, V: Value<'a>>(&mut self, bucket: &Bucket, key: K, val: V) -> Result<(), Error> {
+        match self {
+            &mut Txn::ReadOnly(_) => Err(Error::ReadOnly),
+            &mut Txn::ReadWrite(ref mut txn) => Ok(txn.put(bucket.db(), &key, &val, lmdb::NO_OVERWRITE)?),
+        }
+    }
+
     pub fn del<K: Key>(&mut self, bucket: &Bucket, key: K) -> Result<(), Error> {
         match self {
             &mut Txn::ReadOnly(_) => Err(Error::ReadOnly),
