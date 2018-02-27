@@ -36,8 +36,8 @@ impl <'env> Txn<'env> {
 
     pub fn get<K: Key, V: Value<'env>>(&'env self, bucket: &Bucket, key: K) -> Result<V, Error> {
         match self {
-            &Txn::ReadOnly(ref txn) => Ok(V::from(txn.get(bucket.db(), &key)?)),
-            &Txn::ReadWrite(ref txn) => Ok(V::from(txn.get(bucket.db(), &key)?))
+            &Txn::ReadOnly(ref txn) => Ok(V::from_raw(txn.get(bucket.db(), &key)?)),
+            &Txn::ReadWrite(ref txn) => Ok(V::from_raw(txn.get(bucket.db(), &key)?))
         }
     }
 

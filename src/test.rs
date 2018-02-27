@@ -8,7 +8,7 @@ const DB_PATH: &'static str = "./test/test.db";
 #[test]
 fn test_basic(){
     // Delete current store
-    let _ = fs::remove_dir_all("./test/test.db");
+    let _ = fs::remove_dir_all(DB_PATH);
     let _ = fs::remove_dir_all("./test");
 
     // Create a new store
@@ -18,13 +18,13 @@ fn test_basic(){
     assert!(path::Path::new(DB_PATH).exists());
 
     {
-        let mut txn = store.rw_txn().unwrap();
+        let mut txn = store.write_txn().unwrap();
         txn.set(bucket, "testing", "abc123").unwrap();
         txn.commit().unwrap();
     }
 
     {
-        let txn = store.ro_txn().unwrap();
-        assert_eq!(txn.get(bucket, "testing").unwrap(), "abc123".as_bytes());
+        let txn = store.read_txn().unwrap();
+        assert_eq!(txn.get::<_, &str>(bucket, "testing").unwrap(), "abc123");
     }
 }
