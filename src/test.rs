@@ -19,12 +19,12 @@ fn test_basic(){
 
     {
         let mut txn = store.rw_txn().unwrap();
-        txn.set(bucket, &"testing", &"abc123").unwrap();
+        txn.set(bucket, "testing", "abc123").unwrap();
         txn.commit().unwrap();
     }
 
     {
         let txn = store.ro_txn().unwrap();
-        assert_eq!(txn.get(bucket, &"testing").unwrap(), "abc123".as_bytes());
+        assert_eq!(txn.get(bucket, "testing").unwrap(), "abc123".as_bytes());
     }
 }
