@@ -2,6 +2,8 @@
 name = "kv"
 version = "0.2.0"
 authors = ["Zach Shipko <zachshipko@gmail.com>"]
+license = "ISC"
+keywords = ["key/value store", "embedded database", "lmdb"]
 
 [dependencies]
 lmdb = "0.7"
