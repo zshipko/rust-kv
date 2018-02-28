@@ -6,27 +6,33 @@ use txn::Txn;
 use std::fs;
 use std::collections::HashMap;
 
+/// A Store is used to keep data on disk using LMDB
 pub struct Store {
     env: lmdb::Environment,
     buckets: HashMap<String, Bucket>,
+
+    /// The `config` field stores the initial configuration values for the given store
     pub cfg: Config
 }
 
+/// A Bucket represents a single database, or section of the Store
 pub struct Bucket(lmdb::Database);
 
 impl Bucket {
+    /// Provides access to the underlying LMDB dbi handle
     pub fn db(&self) -> lmdb::Database {
         self.0
     }
 }
 
 impl Store {
+    /// Create a new store with the given configuration
     pub fn new(mut config: Config) -> Result<Store, Error> {
         let _ = fs::create_dir_all(&config.path);
         let mut builder = lmdb::Environment::new();
 
         if config.readonly {
-            config.flags.insert(lmdb::READ_ONLY)
+            config.flags.insert(lmdb::EnvironmentFlags::READ_ONLY)
         }
 
         let env = builder
@@ -53,10 +59,12 @@ impl Store {
         Ok(store)
     }
 
+    /// Get the default bucket
     pub fn default(&self) -> Result<&Bucket, Error> {
         self.bucket("default")
     }
 
+    /// Get a named bucket
     pub fn bucket<S: AsRef<str>>(&self, name: S) -> Result<&Bucket, Error> {
         let s = String::from(name.as_ref());
         match self.buckets.get(&s) {
@@ -65,20 +73,26 @@ impl Store {
         }
     }
 
-
     #[inline]
+    /// Open a readonly transaction
     pub fn read_txn<'env>(&'env self) -> Result<Txn<'env>, Error> {
         let txn = self.env.begin_ro_txn()?;
         Ok(Txn::read_only(txn))
     }
 
     #[inline]
+    /// Open a writable transaction
     pub fn write_txn<'env>(&'env self) -> Result<Txn<'env>, Error> {
+        if self.cfg.readonly {
+            return Err(Error::ReadOnly)
+        }
+
         let txn = self.env.begin_rw_txn()?;
         Ok(Txn::read_write(txn))
     }
 
     #[inline]
+    /// Sync data to disk
     pub fn sync(&self, force: bool) -> Result<(), Error> {
         Ok(self.env.sync(force)?)
     }

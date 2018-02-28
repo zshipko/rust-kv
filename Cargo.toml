@@ -1,7 +1,12 @@
 [package]
 name = "kv"
-version = "0.2.0"
+version = "0.2.2"
 authors = ["Zach Shipko <zachshipko@gmail.com>"]
+license = "ISC"
+keywords = ["key-value-store", "database", "lmdb"]
+repository = "https://github.com/zshipko/rust-kv"
+documentation = "https://docs.rs/kv"
+description = "Easy embedded key/value stores for applications written in Rust"
 
 [dependencies]
-lmdb = "0.7"
+lmdb = { version = "0.7", git = "https://github.com/zshipko/lmdb-rs" }
