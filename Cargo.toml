@@ -9,4 +9,4 @@ documentation = "https://docs.rs/kv"
 description = "Easy embedded key/value stores for applications written in Rust"
 
 [dependencies]
-lmdb = { version = "0.7" }
+lmdb = { git = "https://github.com/zshipko/lmdb-rs", version = "0.7" }

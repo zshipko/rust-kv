@@ -16,7 +16,7 @@ pub use config::Config;
 pub use error::Error;
 pub use txn::Txn;
 pub use store::{Bucket, Store};
-pub use cursor::{RwCursor, RoCursor};
+pub use cursor::{RwCursor, RoCursor, CursorOp};
 pub use types::{Key, Value};
 
 
