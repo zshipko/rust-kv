@@ -3,7 +3,7 @@ use lmdb::Transaction;
 
 use error::Error;
 use store::Bucket;
-use cursor::{RoCursor, RwCursor};
+use cursor::Cursor;
 use types::{Key, Value};
 
 /// Provices access to the database
@@ -24,13 +24,11 @@ impl <'env> Txn<'env> {
         }
     }
 
-    /// Wraps an lmdb::RoTransaction
-    pub fn read_only(t: lmdb::RoTransaction<'env>) -> Txn<'env> {
+    pub(crate) fn read_only(t: lmdb::RoTransaction<'env>) -> Txn<'env> {
         Txn::ReadOnly(t)
     }
 
-    /// Wraps an lmdb::RwTransaction
-    pub fn read_write(t: lmdb::RwTransaction<'env>) -> Txn<'env> {
+    pub(crate) fn read_write(t: lmdb::RwTransaction<'env>) -> Txn<'env> {
         Txn::ReadWrite(t)
     }
 
@@ -83,18 +81,18 @@ impl <'env> Txn<'env> {
     }
 
     /// Open a new readonly cursor
-    pub fn read_cursor(&self, bucket: &Bucket) -> Result<RoCursor, Error> {
+    pub fn read_cursor(&self, bucket: &Bucket) -> Result<Cursor, Error> {
         match self {
-            &Txn::ReadOnly(ref txn) => Ok(RoCursor(txn.open_ro_cursor(bucket.db())?)),
-            &Txn::ReadWrite(ref txn) => Ok(RoCursor(txn.open_ro_cursor(bucket.db())?))
+            &Txn::ReadOnly(ref txn) => Ok(Cursor::read_only(txn.open_ro_cursor(bucket.db())?)),
+            &Txn::ReadWrite(ref txn) => Ok(Cursor::read_only(txn.open_ro_cursor(bucket.db())?))
         }
     }
 
     /// Open a new writable cursor
-    pub fn write_cursor(&mut self, bucket: &Bucket) -> Result<RwCursor, Error> {
+    pub fn write_cursor(&mut self, bucket: &Bucket) -> Result<Cursor, Error> {
         match self {
             &mut Txn::ReadOnly(_) => Err(Error::ReadOnly),
-            &mut Txn::ReadWrite(ref mut txn) => Ok(RwCursor(txn.open_rw_cursor(bucket.db())?))
+            &mut Txn::ReadWrite(ref mut txn) => Ok(Cursor::read_write(txn.open_rw_cursor(bucket.db())?))
         }
     }
 }
