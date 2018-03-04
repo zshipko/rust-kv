@@ -19,6 +19,10 @@ impl <'a> Key for &'a str {
 
 }
 
+impl <'a> Key for &'a [u8] {
+
+}
+
 impl <'a> Value<'a> for &'a [u8] {
     fn from_raw(raw: &'a [u8]) -> Self {
         raw

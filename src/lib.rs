@@ -14,9 +14,9 @@ mod types;
 
 pub use config::Config;
 pub use error::Error;
-pub use txn::Txn;
-pub use store::{Bucket, Store};
-pub use cursor::{Cursor, CursorOp};
+//pub use txn::Txn;
+pub use store::{/*Bucket,*/ Store};
+pub use cursor::{/*Cursor,*/ CursorOp};
 pub use types::{Key, Value};
 
 

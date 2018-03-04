@@ -1,3 +1,5 @@
+use std::marker::PhantomData;
+
 use lmdb;
 use lmdb::Cursor as LMDBCursor;
 
@@ -34,30 +36,38 @@ impl CursorOp {
     }
 }
 
-/// Abstracts over both readonly and writable cursors
-pub enum Cursor<'a> {
-    /// A read-only cursor
+pub enum Cursor<'a, K, V> {
     ReadOnly(lmdb::RoCursor<'a>),
-
-    /// A writable cursor
-    ReadWrite(lmdb::RwCursor<'a>)
+    ReadWrite(lmdb::RwCursor<'a>),
+    Phantom(PhantomData<K>, PhantomData<V>)
 }
 
-impl <'a> Cursor<'a> {
-        /// Returns true when the transaction is ReadOnly
+#[inline]
+fn make_key<'a, K: Key>(k: Option<&'a [u8]>) -> Option<K>
+    where K: ::std::convert::From<&'a [u8]>
+{
+    match k {
+        Some(x) => Some(K::from(x)),
+        None => None
+    }
+}
+
+impl <'a, K: Key, V: Value<'a>> Cursor<'a, K, V> {
+    /// Returns true when the transaction is ReadOnly
     pub fn is_read_only(&self) -> bool {
         match self {
             &Cursor::ReadOnly(_) => true,
-            &Cursor::ReadWrite(_) => false
+            &Cursor::ReadWrite(_) => false,
+            &Cursor::Phantom(_, _) => unreachable!()
         }
     }
 
 
-    pub(crate) fn read_only(cursor: lmdb::RoCursor<'a>) -> Cursor<'a> {
+    pub(crate) fn read_only(cursor: lmdb::RoCursor<'a>) -> Cursor<'a, K, V> {
         Cursor::ReadOnly(cursor)
     }
 
-    pub(crate) fn read_write(cursor: lmdb::RwCursor<'a>) -> Cursor<'a> {
+    pub(crate) fn read_write(cursor: lmdb::RwCursor<'a>) -> Cursor<'a, K, V> {
         Cursor::ReadWrite(cursor)
     }
 
@@ -66,44 +76,61 @@ impl <'a> Cursor<'a> {
     pub fn iter(&mut self) -> lmdb::Iter<'a> {
         match self {
             &mut Cursor::ReadOnly(ref mut ro) => ro.iter(),
-            &mut Cursor::ReadWrite(ref mut rw) => rw.iter()
+            &mut Cursor::ReadWrite(ref mut rw) => rw.iter(),
+            &mut Cursor::Phantom(_, _) => unreachable!()
         }
     }
 
     #[inline]
     /// Iterate over key/values pairs starting at `key`
-    pub fn iter_from<K: Key>(&mut self, key: K) -> lmdb::Iter<'a> {
+    pub fn iter_from(&mut self, key: K) -> lmdb::Iter<'a> {
          match self {
             &mut Cursor::ReadOnly(ref mut ro) => ro.iter_from(key),
-            &mut Cursor::ReadWrite(ref mut rw) => rw.iter_from(key)
+            &mut Cursor::ReadWrite(ref mut rw) => rw.iter_from(key),
+            &mut Cursor::Phantom(_, _) => unreachable!()
         }
     }
 
     #[inline]
     /// Insert a value at the current position
-    pub fn put<'b, K: Key, V: Value<'b>>(&mut self, key: K, value: V) -> Result<(), Error> {
+    pub fn put(&mut self, key: K, value: V) -> Result<(), Error> {
          match self {
             &mut Cursor::ReadOnly(_) => Err(Error::ReadOnly),
-            &mut Cursor::ReadWrite(ref mut rw) => Ok(rw.put(&key, &value, lmdb::WriteFlags::empty())?)
+            &mut Cursor::ReadWrite(ref mut rw) => Ok(rw.put(&key.as_ref(), &value.as_ref(), lmdb::WriteFlags::empty())?),
+            &mut Cursor::Phantom(_, _) => unreachable!()
         }
 
     }
 
     #[inline]
     /// Insert a value at the current position
-    pub fn del<K: Key>(&mut self) -> Result<(), Error> {
+    pub fn del(&mut self) -> Result<(), Error> {
          match self {
             &mut Cursor::ReadOnly(_) => Err(Error::ReadOnly),
-            &mut Cursor::ReadWrite(ref mut rw) => Ok(rw.del(lmdb::WriteFlags::empty())?)
+            &mut Cursor::ReadWrite(ref mut rw) => Ok(rw.del(lmdb::WriteFlags::empty())?),
+            &mut Cursor::Phantom(_, _) => unreachable!()
          }
     }
 
-    #[inline]
     /// Get a value from the cursor
-    pub fn get<K: Key, V: Value<'a>>(&self, key: Option<&[u8]>, value: Option<&[u8]>, op: CursorOp) -> Result<(Option<&'a [u8]>, &'a [u8]), Error> {
-         match self {
-            &Cursor::ReadOnly(ref ro) => Ok(ro.get(key, value, op.flag())?),
-            &Cursor::ReadWrite(ref rw) => Ok(rw.get(key, value, op.flag())?)
+    pub fn get(&self, key: Option<K>, op: CursorOp) -> Result<(Option<K>, V), Error>
+        where K: ::std::convert::From<&'a [u8]>
+    {
+        let k = match key {
+            Some(ref k) => Some(k.as_ref()),
+            None => None
+        };
+
+        match self {
+            &Cursor::ReadOnly(ref ro) => {
+                let (_k, _v) = ro.get(k, None, op.flag())?;
+                Ok((make_key(_k), V::from_raw(_v)))
+            },
+            &Cursor::ReadWrite(ref rw) => {
+                let (_k, _v) = rw.get(k, None, op.flag())?;
+                Ok((make_key(_k), V::from_raw(_v)))
+            },
+            &Cursor::Phantom(_, _) => unreachable!()
          }
     }
 }
