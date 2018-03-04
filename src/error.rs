@@ -1,3 +1,5 @@
+use std::io;
+
 use lmdb;
 
 #[derive(Debug)]
@@ -5,6 +7,9 @@ use lmdb;
 pub enum Error {
     /// An LMDB error
     LMDB(lmdb::Error),
+
+    /// An IO error
+    IO(io::Error),
 
     /// A non-existant or invalid bucket was used
     InvalidBucket,
@@ -23,6 +28,12 @@ impl From<lmdb::Error> for Error {
             lmdb::Error::BadDbi => Error::InvalidBucket,
             _ => Error::LMDB(err),
         }
+    }
+}
+
+impl From<io::Error> for Error {
+    fn from(err: io::Error) -> Error {
+        Error::IO(err)
     }
 }
 

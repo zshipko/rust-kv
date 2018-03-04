@@ -1,8 +1,11 @@
+use std::path::{PathBuf, Path};
+
 use lmdb;
 
-use std::path::{Path, PathBuf};
+use error::Error;
 
 /// Config is used to create a new store
+#[derive(Debug, Clone)]
 pub struct Config {
     /// The `map_size` field determines the maximum number of bytes stored in the database
     pub map_size: usize,
@@ -74,5 +77,20 @@ impl Config {
     pub fn readonly(&mut self, readonly: bool) -> &mut Config {
         self.readonly = readonly;
         self
+    }
+
+    pub(crate) fn env(&mut self) -> Result<lmdb::Environment, Error> {
+        let mut builder = lmdb::Environment::new();
+
+        if self.readonly {
+            self.flags.insert(lmdb::EnvironmentFlags::READ_ONLY)
+        }
+
+        Ok(builder
+            .set_flags(self.flags)
+            .set_max_readers(self.max_readers)
+            .set_max_dbs((self.buckets.len() + 1) as u32)
+            .set_map_size(self.map_size)
+            .open(self.path.as_path())?)
     }
 }

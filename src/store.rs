@@ -40,23 +40,31 @@ impl Store<Integer> {
     }
 }
 
-impl<K: Key> Store<K> {
+impl <K: Key> Store<K> {
+    pub(crate) fn wrap(env: lmdb::Environment, config: Config) -> Result<Store<K>, Error> {
+        let _ = fs::create_dir_all(&config.path);
+        let mut store = Store {
+            env: env,
+            buckets: HashMap::new(),
+            cfg: config,
+            _key: PhantomData
+        };
+
+        for bucket in &store.cfg.buckets {
+            let b = store.env.create_db(Some(AsRef::as_ref(bucket)), store.cfg.database_flags)?;
+            store.buckets.insert(bucket.clone(), Bucket(b));
+        }
+
+        let default = store.env.open_db(None)?;
+        store.buckets.insert(String::from("default"), Bucket(default));
+
+        Ok(store)
+    }
+
     /// Create a new store with the given configuration
     pub fn new(mut config: Config) -> Result<Store<K>, Error> {
         let _ = fs::create_dir_all(&config.path);
-        let mut builder = lmdb::Environment::new();
-
-        if config.readonly {
-            config.flags.insert(lmdb::EnvironmentFlags::READ_ONLY)
-        }
-
-        let env = builder
-            .set_flags(config.flags)
-            .set_max_readers(config.max_readers)
-            .set_max_dbs((config.buckets.len() + 1) as u32)
-            .set_map_size(config.map_size)
-            .open(config.path.as_path())?;
-
+        let env = config.env()?;
         let mut store = Store {
             env: env,
             buckets: HashMap::new(),

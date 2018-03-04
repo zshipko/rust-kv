@@ -11,3 +11,5 @@ description = "A simple embedded key value store for Rust"
 [dependencies]
 lmdb = { version = "0.8" }
 
+[dev-dependencies]
+tempdir = "0.3"
