@@ -8,13 +8,21 @@ use store::Bucket;
 use cursor::Cursor;
 use types::{Key, Value};
 
-pub enum Txn<'env, V> {
+pub struct Hidden<A, B>(PhantomData<A>, PhantomData<B>);
+
+/// Access to the database
+pub enum Txn<'env, K, V> {
+    /// Readonly access
     ReadOnly(lmdb::RoTransaction<'env>),
+
+    /// Read-write access
     ReadWrite(lmdb::RwTransaction<'env>),
-    Phantom(PhantomData<V>)
+
+    /// Type information
+    Phantom(Hidden<K, V>)
 }
 
-impl <'env, V: Value<'env>> Txn<'env, V> {
+impl <'env, K: Key, V: Value<'env>> Txn<'env, K, V> {
     /// Returns true when the transaction is ReadOnly
     pub fn is_read_only(&self) -> bool {
         match self {
@@ -24,11 +32,11 @@ impl <'env, V: Value<'env>> Txn<'env, V> {
         }
     }
 
-    pub(crate) fn read_only(t: lmdb::RoTransaction<'env>) -> Txn<'env, V> {
+    pub(crate) fn read_only(t: lmdb::RoTransaction<'env>) -> Txn<'env, K, V> {
         Txn::ReadOnly(t)
     }
 
-    pub(crate) fn read_write(t: lmdb::RwTransaction<'env>) -> Txn<'env, V> {
+    pub(crate) fn read_write(t: lmdb::RwTransaction<'env>) -> Txn<'env, K, V> {
         Txn::ReadWrite(t)
     }
 
@@ -51,43 +59,43 @@ impl <'env, V: Value<'env>> Txn<'env, V> {
     }
 
     /// Gets the value associated with the given key
-    pub fn get<K: Key>(&'env self, bucket: &Bucket<K>, key: K) -> Result<V, Error> {
+    pub fn get(&'env self, bucket: &Bucket, key: K) -> Result<V, Error> {
         match self {
-            &Txn::ReadOnly(ref txn) => Ok(V::from_raw(txn.get(bucket.db(), &key)?)),
-            &Txn::ReadWrite(ref txn) => Ok(V::from_raw(txn.get(bucket.db(), &key)?)),
+            &Txn::ReadOnly(ref txn) => Ok(V::from_raw(txn.get(bucket.db(), &key.as_ref())?)),
+            &Txn::ReadWrite(ref txn) => Ok(V::from_raw(txn.get(bucket.db(), &key.as_ref())?)),
             &Txn::Phantom(_) => unreachable!()
         }
     }
 
     /// Sets the value associated with the given key
-    pub fn set<'a, K: Key>(&mut self, bucket: &Bucket<K>, key: K, val: V) -> Result<(), Error> {
+    pub fn set<'b, V0: Value<'b>>(&mut self, bucket: &Bucket, key: K, val: V0) -> Result<(), Error> {
         match self {
             &mut Txn::ReadOnly(_) => Err(Error::ReadOnly),
-            &mut Txn::ReadWrite(ref mut txn) => Ok(txn.put(bucket.db(), &key, &val, lmdb::WriteFlags::empty())?),
+            &mut Txn::ReadWrite(ref mut txn) => Ok(txn.put(bucket.db(), &key.as_ref(), &val, lmdb::WriteFlags::empty())?),
             &mut Txn::Phantom(_) => unreachable!()
         }
     }
 
     /// Sets the value associated with the given key if it doesn't already exist
-    pub fn set_no_overwrite<'a, K: Key>(&mut self, bucket: &Bucket<K>, key: K, val: V) -> Result<(), Error> {
+    pub fn set_no_overwrite<'b, V0: Value<'b>>(&mut self, bucket: &Bucket, key: K, val: V0) -> Result<(), Error> {
         match self {
             &mut Txn::ReadOnly(_) => Err(Error::ReadOnly),
-            &mut Txn::ReadWrite(ref mut txn) => Ok(txn.put(bucket.db(), &key, &val, lmdb::WriteFlags::NO_OVERWRITE)?),
+            &mut Txn::ReadWrite(ref mut txn) => Ok(txn.put(bucket.db(), &key.as_ref(), &val, lmdb::WriteFlags::NO_OVERWRITE)?),
             &mut Txn::Phantom(_) => unreachable!()
         }
     }
 
     /// Deletes the key and value associated with `key` from the database
-    pub fn del<K: Key>(&mut self, bucket: &Bucket<K>, key: K) -> Result<(), Error> {
+    pub fn del(&mut self, bucket: &Bucket, key: K) -> Result<(), Error> {
         match self {
             &mut Txn::ReadOnly(_) => Err(Error::ReadOnly),
-            &mut Txn::ReadWrite(ref mut txn) => Ok(txn.del(bucket.db(), &key, None)?),
+            &mut Txn::ReadWrite(ref mut txn) => Ok(txn.del(bucket.db(), &key.as_ref(), None)?),
             &mut Txn::Phantom(_) => unreachable!()
         }
     }
 
     /// Open a new readonly cursor
-    pub fn read_cursor<K: Key>(&'env self, bucket: &Bucket<K>) -> Result<Cursor<'env, K, V>, Error> {
+    pub fn read_cursor(&'env self, bucket: &Bucket) -> Result<Cursor<'env, K, V>, Error> {
         match self {
             &Txn::ReadOnly(ref txn,) => Ok(Cursor::read_only(txn.open_ro_cursor(bucket.db())?)),
             &Txn::ReadWrite(ref txn) => Ok(Cursor::read_only(txn.open_ro_cursor(bucket.db())?)),
@@ -96,7 +104,7 @@ impl <'env, V: Value<'env>> Txn<'env, V> {
     }
 
     /// Open a new writable cursor
-    pub fn write_cursor<K: Key>(&'env mut self, bucket: &Bucket<K>) -> Result<Cursor<'env, K, V>, Error> {
+    pub fn write_cursor(&'env mut self, bucket: &Bucket) -> Result<Cursor<'env, K, V>, Error> {
         match self {
             &mut Txn::ReadOnly(_) => Err(Error::ReadOnly),
             &mut Txn::ReadWrite(ref mut txn) => Ok(Cursor::read_write(txn.open_rw_cursor(bucket.db())?)),

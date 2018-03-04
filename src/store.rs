@@ -7,12 +7,12 @@ use error::Error;
 use txn::Txn;
 use std::fs;
 use std::collections::HashMap;
-use types::{Key, Value};
+use types::{Key, Value, Integer};
 
 /// A Store is used to keep data on disk using LMDB
 pub struct Store<K> {
     env: lmdb::Environment,
-    buckets: HashMap<String, Bucket<K>>,
+    buckets: HashMap<String, Bucket>,
 
     /// The `config` field stores the initial configuration values for the given store
     pub cfg: Config,
@@ -21,12 +21,20 @@ pub struct Store<K> {
 }
 
 /// A Bucket represents a single database, or section of the Store
-pub struct Bucket<K>(lmdb::Database, PhantomData<K>);
+pub struct Bucket(lmdb::Database);
 
-impl <K: Key> Bucket<K> {
+impl Bucket {
     /// Provides access to the underlying LMDB dbi handle
     pub fn db(&self) -> lmdb::Database {
         self.0
+    }
+}
+
+impl Store<Integer> {
+    /// Create a new store with integer keys
+    pub fn new_integer_keys(mut config: Config) -> Result<Store<Integer>, Error> {
+        config.database_flags.insert(lmdb::DatabaseFlags::INTEGER_KEY);
+        Store::new(config)
     }
 }
 
@@ -55,23 +63,23 @@ impl <K: Key> Store<K> {
         };
 
         for bucket in &store.cfg.buckets {
-            let b = store.env.open_db(Some(bucket.as_ref()))?;
-            store.buckets.insert(bucket.clone(), Bucket(b, PhantomData));
+            let b = store.env.create_db(Some(AsRef::as_ref(bucket)), store.cfg.database_flags)?;
+            store.buckets.insert(bucket.clone(), Bucket(b));
         }
 
         let default = store.env.open_db(None)?;
-        store.buckets.insert(String::from("default"), Bucket(default, PhantomData));
+        store.buckets.insert(String::from("default"), Bucket(default));
 
         Ok(store)
     }
 
     /// Get the default bucket
-    pub fn default(&self) -> Result<&Bucket<K>, Error> {
+    pub fn default(&self) -> Result<&Bucket, Error> {
         self.bucket("default")
     }
 
     /// Get a named bucket
-    pub fn bucket<S: AsRef<str>>(&self, name: S) -> Result<&Bucket<K>, Error> {
+    pub fn bucket<S: AsRef<str>>(&self, name: S) -> Result<&Bucket, Error> {
         let s = String::from(name.as_ref());
         match self.buckets.get(&s) {
             Some(ref bucket) => Ok(bucket),
@@ -81,14 +89,14 @@ impl <K: Key> Store<K> {
 
     #[inline]
     /// Open a readonly transaction
-    pub fn read_txn<'env, V: Value<'env>>(&'env self) -> Result<Txn<'env, V>, Error> {
+    pub fn read_txn<'env, V: Value<'env>>(&'env self) -> Result<Txn<'env, K,  V>, Error> {
         let txn = self.env.begin_ro_txn()?;
         Ok(Txn::read_only(txn))
     }
 
     #[inline]
     /// Open a writable transaction
-    pub fn write_txn<'env, V: Value<'env>>(&'env self) -> Result<Txn<'env, V>, Error> {
+    pub fn write_txn<'env, V: Value<'env>>(&'env self) -> Result<Txn<'env, K, V>, Error> {
         if self.cfg.readonly {
             return Err(Error::ReadOnly)
         }

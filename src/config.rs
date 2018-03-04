@@ -20,11 +20,13 @@ pub struct Config {
     pub buckets: Vec<String>,
 
     /// Readonly sets the MDB_RDONLY flag when opening the database
-    pub readonly: bool
+    pub readonly: bool,
+
+    /// Flags used when creating a new Bucket
+    pub database_flags: lmdb::DatabaseFlags
 }
 
 impl Config {
-
     /// Create a default configuration object
     pub fn default<P: AsRef<Path>>(p: P) -> Config {
         Config {
@@ -33,7 +35,8 @@ impl Config {
             flags: lmdb::EnvironmentFlags::empty(),
             path: p.as_ref().to_path_buf(),
             buckets: Vec::new(),
-            readonly: false
+            readonly: false,
+            database_flags: lmdb::DatabaseFlags::empty()
         }
     }
 
