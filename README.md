@@ -11,19 +11,18 @@ A simple embedded key/value store for Rust built on [LMDB](https://github.com/LM
 
 
 ```rust
-let cfg = Config::default(DB_PATH);
+let cfg = Config::default("./test.db");
 let store = Store::<&str>::new(cfg).unwrap();
 let bucket = store.default().unwrap();
 
-// Set a value
 let mut txn = store.write_txn::<&str>().unwrap();
 txn.set(bucket, "testing", "abc123").unwrap();
 txn.commit().unwrap();
 
-// Get a value from the store
 let txn = store.read_txn::<&str>().unwrap();
 assert_eq!(txn.get(bucket, "testing").unwrap(), "abc123");
 txn.abort();
+}
 ```
 
 See [https://docs.rs/kv](https://docs.rs/kv) for more information
@@ -32,7 +31,5 @@ See [https://docs.rs/kv](https://docs.rs/kv) for more information
 
 * `cbor-value`
     - CBOR value encoding using serde
-* `bincode-value`
-    - bincode value encoding using serde
 
 
