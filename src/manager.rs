@@ -80,7 +80,7 @@ impl Manager {
         Ok(self.stores.lock().unwrap().get(&canonical).cloned())
     }
 
-    /// Return the open store at `path`, or create it by calling `f`.
+    /// Return the open store at cfg.path, or create it using the given config.
     pub fn get_or_create<T>(&mut self, mut cfg: Config) -> Result<Arc<RwLock<Handle>>, Error>
     where T: Key
     {
