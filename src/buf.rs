@@ -11,6 +11,11 @@ impl ValueBuf {
     pub fn empty() -> ValueBuf {
         ValueBuf(Vec::new())
     }
+
+    /// Create a new ValueBuf with the given size
+    pub fn new(n: usize) -> ValueBuf {
+        ValueBuf(Vec::with_capacity(n))
+    }
 }
 
 impl AsRef<[u8]> for ValueBuf {
