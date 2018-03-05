@@ -87,7 +87,7 @@ impl<'a, K: Key, V: Value<'a>> Cursor<'a, K, V> {
 
     #[inline]
     /// Insert a value at the current position
-    pub fn put(&mut self, key: &'a K, value: &'a V) -> Result<(), Error> {
+    pub fn put<V0: AsRef<V>>(&mut self, key: &'a K, value: &'a V0) -> Result<(), Error> {
         match self {
             &mut Cursor::ReadOnly(_) => Err(Error::ReadOnly),
             &mut Cursor::ReadWrite(ref mut rw) => {
