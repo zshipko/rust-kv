@@ -104,3 +104,34 @@ fn test_cbor_encoding() {
     txn.abort();
 }
 
+#[cfg(feature = "json-value")]
+#[test]
+fn test_json_encoding() {
+    use json::Json;
+    use buf::ValueBuf;
+    let path = reset("json");
+
+    // Create a new store
+    let cfg = Config::default(path.clone());
+    let store = Store::<&str>::new(cfg).unwrap();
+    let bucket = store.default().unwrap();
+    assert!(path::Path::new(path.as_str()).exists());
+
+    let mut txn = store.write_txn::<ValueBuf<Json>>().unwrap();
+    txn.set(bucket, "testing", Json::from(true)).unwrap();
+    txn.commit().unwrap();
+
+    let txn = store.read_txn::<ValueBuf<Json>>().unwrap();
+    let v = txn.get(bucket, "testing").unwrap().inner().unwrap();
+    assert_eq!(v.as_bool().unwrap(), true);
+    txn.abort();
+}
+
+#[test]
+fn test_config_encoding() {
+    let cfg = Config::default("./test");
+    cfg.save("./config").unwrap();
+    let cfg2 = Config::load("./config").unwrap();
+    assert!(cfg == cfg2);
+    let _ = fs::remove_file("./config");
+}

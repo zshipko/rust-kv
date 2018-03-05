@@ -30,6 +30,8 @@ See [https://docs.rs/kv](https://docs.rs/kv) for more information
 ## Features
 
 * `cbor-value`
-    - CBOR value encoding using serde
+    - CBOR value encoding using `serde`
+* `json-value`
+    - JSON value encoding using `serde`
 
 

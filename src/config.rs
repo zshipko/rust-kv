@@ -1,11 +1,13 @@
 use std::path::{PathBuf, Path};
+use std::{io, fs};
 
+use toml;
 use lmdb;
 
 use error::Error;
 
 /// Config is used to create a new store
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct Config {
     /// The `map_size` field determines the maximum number of bytes stored in the database
     pub map_size: usize,
@@ -13,8 +15,7 @@ pub struct Config {
     /// The `max_readers` field determines the maximum number of readers for a given database
     pub max_readers: u32,
 
-    /// The `flags` field contains raw LMDB flags
-    pub flags: lmdb::EnvironmentFlags,
+    flags: u32, //lmdb::EnvironmentFlags,
 
     /// The `path` field determines where the database will be created
     pub path: PathBuf,
@@ -25,8 +26,7 @@ pub struct Config {
     /// Readonly sets the MDB_RDONLY flag when opening the database
     pub readonly: bool,
 
-    /// Flags used when creating a new Bucket
-    pub database_flags: lmdb::DatabaseFlags,
+    database_flags: u32, // lmdb::DatabaseFlags,
 }
 
 impl Config {
@@ -35,12 +35,43 @@ impl Config {
         Config {
             map_size: 1024 * 1024 * 1024,
             max_readers: 5,
-            flags: lmdb::EnvironmentFlags::empty(),
+            flags: lmdb::EnvironmentFlags::empty().bits(),
             path: p.as_ref().to_path_buf(),
             buckets: Vec::new(),
             readonly: false,
-            database_flags: lmdb::DatabaseFlags::empty(),
+            database_flags: lmdb::DatabaseFlags::empty().bits(),
         }
+    }
+
+    /// Save Config to an io::Write
+    pub fn save_to<W: io::Write>(&self, mut w: W) -> Result<(), Error> {
+        let s = match toml::to_string(self) {
+            Ok(s) => s,
+            Err(_) => return Err(Error::InvalidConfiguration)
+        };
+        Ok(w.write_all(s.as_ref())?)
+    }
+
+    /// Save Config to a file
+    pub fn save<P: AsRef<Path>>(&self, path: P) -> Result<(), Error> {
+        let file = fs::File::create(path.as_ref())?;
+        self.save_to(file)
+    }
+
+    /// Load configuration from an io::Read
+    pub fn load_from<R: io::Read>(mut r: R) -> Result<Config, Error> {
+        let mut buf = Vec::new();
+        r.read_to_end(&mut buf)?;
+        match toml::from_slice(buf.as_ref()) {
+            Ok(cfg) => Ok(cfg),
+            Err(_) => Err(Error::InvalidConfiguration)
+        }
+    }
+
+    /// Load configuration to a file
+    pub fn load<P: AsRef<Path>>(path: P) -> Result<Config, Error> {
+        let file = fs::File::open(path.as_ref())?;
+        Self::load_from(file)
     }
 
     /// Set `map_size` field
@@ -55,9 +86,16 @@ impl Config {
         self
     }
 
-    /// Set `flags` field
-    pub fn set_flags(&mut self, f: lmdb::EnvironmentFlags) -> &mut Config {
-        self.flags = f;
+    /// Get `flags` field (DatabaseFlags)
+    pub fn flags(&self) -> lmdb::EnvironmentFlags {
+        lmdb::EnvironmentFlags::from_bits(self.flags).unwrap()
+    }
+
+    /// Set `flags` field (DatabaseFlags)
+    pub fn flag(&mut self, f: lmdb::EnvironmentFlags) -> &mut Config {
+        let mut flags = self.flags();
+        flags.insert(f);
+        self.flags = f.bits();
         self
     }
 
@@ -79,15 +117,32 @@ impl Config {
         self
     }
 
+    /// Set database flags
+    pub fn database_flag(&mut self, f: lmdb::DatabaseFlags) -> &mut Config {
+        let mut flags = self.database_flags();
+        flags.insert(f);
+        self.database_flags = flags.bits();
+        self
+    }
+
+    /// Get database flags
+    pub fn database_flags(&self) -> lmdb::DatabaseFlags {
+        lmdb::DatabaseFlags::from_bits(self.database_flags).unwrap()
+    }
+
     pub(crate) fn env(&mut self) -> Result<lmdb::Environment, Error> {
         let mut builder = lmdb::Environment::new();
 
+        let mut flags = self.flags();
+
         if self.readonly {
-            self.flags.insert(lmdb::EnvironmentFlags::READ_ONLY)
+            flags.insert(lmdb::EnvironmentFlags::READ_ONLY)
         }
 
+        let _ = fs::create_dir_all(&self.path);
+
         Ok(builder
-            .set_flags(self.flags)
+            .set_flags(flags)
             .set_max_readers(self.max_readers)
             .set_max_dbs((self.buckets.len() + 1) as u32)
             .set_map_size(self.map_size)

@@ -21,7 +21,10 @@ pub enum Error {
     ReadOnly,
 
     /// An encoding error
-    InvalidEncoding
+    InvalidEncoding,
+
+    /// Configuration is invalid
+    InvalidConfiguration
 }
 
 impl From<lmdb::Error> for Error {
