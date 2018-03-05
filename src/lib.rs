@@ -10,14 +10,14 @@ mod txn;
 mod store;
 mod cursor;
 mod types;
-#[cfg(test)] mod test;
+mod buf;
+#[cfg(test)]
+mod test;
 
 pub use config::Config;
 pub use error::Error;
 pub use txn::Txn;
 pub use store::{Bucket, Store};
 pub use cursor::{Cursor, CursorOp};
-pub use types::{Key, Value, Integer};
-
-
-
+pub use types::{Integer, Key, Value, ValueMut, ValueRef};
+pub use buf::ValueBuf;

@@ -1,4 +1,4 @@
-use std::{path, fs};
+use std::{fs, path};
 
 use config::Config;
 use store::Store;
@@ -10,7 +10,7 @@ fn reset(name: &str) -> String {
 }
 
 #[test]
-fn test_basic(){
+fn test_basic() {
     let path = reset("basic");
 
     // Create a new store

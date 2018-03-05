@@ -1,6 +1,6 @@
 use lmdb;
 
-use std::path::{PathBuf, Path};
+use std::path::{Path, PathBuf};
 
 /// Config is used to create a new store
 pub struct Config {
@@ -23,7 +23,7 @@ pub struct Config {
     pub readonly: bool,
 
     /// Flags used when creating a new Bucket
-    pub database_flags: lmdb::DatabaseFlags
+    pub database_flags: lmdb::DatabaseFlags,
 }
 
 impl Config {
@@ -36,7 +36,7 @@ impl Config {
             path: p.as_ref().to_path_buf(),
             buckets: Vec::new(),
             readonly: false,
-            database_flags: lmdb::DatabaseFlags::empty()
+            database_flags: lmdb::DatabaseFlags::empty(),
         }
     }
 
@@ -76,4 +76,3 @@ impl Config {
         self
     }
 }
-

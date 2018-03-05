@@ -10,3 +10,4 @@ description = "A simple embedded key value store for Rust"
 
 [dependencies]
 lmdb = { version = "0.8" }
+
