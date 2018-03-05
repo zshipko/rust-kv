@@ -3,7 +3,6 @@ use std::marker::PhantomData;
 
 use types::{Value, ValueMut};
 use encoding::Encoding;
-use error::Error;
 
 /// A Value can be used to dynamically build values
 #[derive(Debug, Clone, PartialEq, PartialOrd)]
@@ -21,8 +20,8 @@ impl <T: Encoding> ValueBuf<T> {
     }
 
     /// Get inner value
-    pub fn inner(&self) -> Result<T, Error> {
-        T::decode(self)
+    pub fn inner(&self) -> T {
+        T::decode(self).unwrap()
     }
 }
 

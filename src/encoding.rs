@@ -5,12 +5,18 @@ use error::Error;
 use types::Value;
 
 /// Encoded values
-pub trait Encoding: Sized + From<ValueBuf<Self>> + Into<ValueBuf<Self>> {
+pub trait Encoding: Sized {
     /// Encode an object to ValueBuf
     fn encode(&self) -> Result<ValueBuf<Self>, Error>;
 
     /// Decode an object from a value reference
     fn decode<'a, V: Value<'a>>(val: &'a V) -> Result<Self, Error>;
+}
+
+impl <E: Encoding> From<E> for ValueBuf<E> {
+    fn from(x: E) -> ::ValueBuf<E> {
+        ::Encoding::encode(&x).unwrap()
+    }
 }
 
 #[cfg(feature = "cbor-value")]
@@ -38,18 +44,6 @@ pub mod cbor {
                 Ok(x) => Ok(x),
                 Err(_) => Err(::Error::InvalidEncoding)
             }
-        }
-    }
-
-    impl From<Cbor> for ::ValueBuf<Cbor> {
-        fn from(x: Cbor) -> ::ValueBuf<Cbor> {
-            ::Encoding::encode(&x).unwrap()
-        }
-    }
-
-    impl From<::ValueBuf<Cbor>> for Cbor {
-        fn from(buf: ::ValueBuf<Cbor>) -> Cbor {
-            ::Encoding::decode(&buf).unwrap()
         }
     }
 }

@@ -99,7 +99,7 @@ fn test_cbor_encoding() {
     txn.commit().unwrap();
 
     let txn = store.read_txn::<ValueBuf<Cbor>>().unwrap();
-    let v = txn.get(bucket, "testing").unwrap().inner().unwrap();
+    let v = txn.get(bucket, "testing").unwrap().inner();
     assert_eq!(v.as_boolean().unwrap(), true);
     txn.abort();
 }
