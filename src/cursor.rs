@@ -105,11 +105,11 @@ impl<'a, K: Key, V: Value<'a>> Cursor<'a, K, V> {
 
     #[inline]
     /// Insert a value at the current position
-    pub fn put<V0: AsRef<V>>(&mut self, key: &'a K, value: &'a V0) -> Result<(), Error> {
+    pub fn set<V0: Into<V>>(&mut self, key: &'a K, value: V0) -> Result<(), Error> {
         match self {
             &mut Cursor::ReadOnly(_) => Err(Error::ReadOnly),
             &mut Cursor::ReadWrite(ref mut rw) => {
-                Ok(rw.put(&key.as_ref(), &value.as_ref(), lmdb::WriteFlags::empty())?)
+                Ok(rw.put(&key.as_ref(), &value.into().as_ref(), lmdb::WriteFlags::empty())?)
             }
             &mut Cursor::Phantom(_) => unreachable!(),
         }

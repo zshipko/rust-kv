@@ -28,4 +28,11 @@ txn.abort();
 
 See [https://docs.rs/kv](https://docs.rs/kv) for more information
 
+## Features
+
+* `cbor-value`
+    - CBOR value encoding using serde
+* `bincode-value`
+    - bincode value encoding using serde
+
 

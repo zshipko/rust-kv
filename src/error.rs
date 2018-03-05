@@ -19,6 +19,9 @@ pub enum Error {
 
     /// A transaction is readonly but something tried to write to it
     ReadOnly,
+
+    /// An encoding error
+    InvalidEncoding
 }
 
 impl From<lmdb::Error> for Error {

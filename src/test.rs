@@ -80,3 +80,27 @@ fn test_cursor() {
     }
     txn.abort();
 }
+
+#[cfg(feature = "cbor-value")]
+#[test]
+fn test_cbor_encoding() {
+    use cbor::Cbor;
+    use buf::ValueBuf;
+    let path = reset("cbor");
+
+    // Create a new store
+    let cfg = Config::default(path.clone());
+    let store = Store::<&str>::new(cfg).unwrap();
+    let bucket = store.default().unwrap();
+    assert!(path::Path::new(path.as_str()).exists());
+
+    let mut txn = store.write_txn::<ValueBuf<Cbor>>().unwrap();
+    txn.set(bucket, "testing", Cbor::from(true)).unwrap();
+    txn.commit().unwrap();
+
+    let txn = store.read_txn::<ValueBuf<Cbor>>().unwrap();
+    let v = txn.get(bucket, "testing").unwrap().inner().unwrap();
+    assert_eq!(v.as_boolean().unwrap(), true);
+    txn.abort();
+}
+

@@ -1,42 +1,50 @@
 use std::io::{self, Read, Write};
+use std::marker::PhantomData;
 
 use types::{Value, ValueMut};
+use encoding::Encoding;
+use error::Error;
 
 /// A Value can be used to dynamically build values
 #[derive(Debug, Clone, PartialEq, PartialOrd)]
-pub struct ValueBuf(pub Vec<u8>);
+pub struct ValueBuf<T>(pub Vec<u8>, PhantomData<T>);
 
-impl ValueBuf {
+impl <T: Encoding> ValueBuf<T> {
     /// Create an empty value buffer
-    pub fn empty() -> ValueBuf {
-        ValueBuf(Vec::new())
+    pub fn empty() -> ValueBuf<T> {
+        ValueBuf(Vec::new(), PhantomData)
     }
 
     /// Create a new ValueBuf with the given size
-    pub fn new(n: usize) -> ValueBuf {
-        ValueBuf(Vec::with_capacity(n))
+    pub fn new(n: usize) -> ValueBuf<T> {
+        ValueBuf(Vec::with_capacity(n), PhantomData)
+    }
+
+    /// Get inner value
+    pub fn inner(&self) -> Result<T, Error> {
+        T::decode(self)
     }
 }
 
-impl AsRef<[u8]> for ValueBuf {
+impl <T: Encoding> AsRef<[u8]> for ValueBuf<T> {
     fn as_ref(&self) -> &[u8] {
         self.0.as_ref()
     }
 }
 
-impl<'a> Value<'a> for ValueBuf {
+impl<'a, T: Encoding> Value<'a> for ValueBuf<T> {
     fn from_raw(raw: &[u8]) -> Self {
-        ValueBuf(raw.to_vec())
+        ValueBuf(raw.to_vec(), PhantomData)
     }
 }
 
-impl Read for ValueBuf {
+impl <T: Encoding> Read for ValueBuf<T> {
     fn read(&mut self, buf: &mut [u8]) -> io::Result<usize> {
         self.0.as_slice().read(buf)
     }
 }
 
-impl Write for ValueBuf {
+impl <T: Encoding> Write for ValueBuf<T> {
     fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
         self.0.write(buf)
     }
@@ -55,3 +63,4 @@ impl<'a> Write for ValueMut<'a> {
         self.as_mut().flush()
     }
 }
+
