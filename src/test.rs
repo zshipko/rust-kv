@@ -2,6 +2,7 @@ use std::{fs, path};
 
 use config::Config;
 use store::Store;
+use types::Integer;
 
 fn reset(name: &str) -> String {
     let s = format!("./test/{}", name);
@@ -45,5 +46,37 @@ fn test_integer_keys() {
 
     let txn = store.read_txn::<&str>().unwrap();
     assert_eq!(txn.get(bucket, key.into()).unwrap(), "abc123");
+    txn.abort();
+}
+
+#[test]
+fn test_cursor() {
+    let path = reset("cursor");
+
+    // Create a new store
+    let cfg = Config::default(path.clone());
+    let store = Store::new_integer_keys(cfg).unwrap();
+    let bucket = store.default().unwrap();
+    assert!(path::Path::new(path.as_str()).exists());
+
+    let mut txn = store.write_txn::<String>().unwrap();
+
+    for i in 0..100 {
+        txn.set(bucket, i.into(), format!("{}", i)).unwrap();
+    }
+
+    txn.commit().unwrap();
+
+    let txn = store.read_txn::<String>().unwrap();
+    {
+        let mut cursor = txn.read_cursor(bucket).unwrap();
+        let mut index = 0;
+
+        for (k, v) in cursor.iter() {
+            assert_eq!(k, Integer::from(index));
+            assert_eq!(v, format!("{}", index));
+            index += 1;
+        }
+    }
     txn.abort();
 }

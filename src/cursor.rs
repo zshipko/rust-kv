@@ -1,3 +1,5 @@
+use std::marker::PhantomData;
+
 use lmdb;
 use lmdb::Cursor as LMDBCursor;
 
@@ -47,6 +49,22 @@ pub enum Cursor<'a, K, V> {
     Phantom(Hidden<K, V>),
 }
 
+/// Iter wrapper
+pub struct Iter<'a, K, V>(lmdb::Iter<'a>, PhantomData<K>, PhantomData<V>);
+
+impl <'a, K: Key, V: Value<'a>> Iterator for Iter<'a, K, V>
+where K: From<&'a [u8]>
+{
+    type Item = (K, V);
+    fn next(&mut self) -> Option<(K, V)> {
+        let (k, v) = match lmdb::Iter::next(&mut self.0) {
+            Some((k, v)) => (k, v),
+            None => return None
+        };
+        Some((K::from(k), V::from_raw(v)))
+    }
+}
+
 impl<'a, K: Key, V: Value<'a>> Cursor<'a, K, V> {
     /// Returns true when the transaction is ReadOnly
     pub fn is_read_only(&self) -> bool {
@@ -67,20 +85,20 @@ impl<'a, K: Key, V: Value<'a>> Cursor<'a, K, V> {
 
     #[inline]
     /// Iterate over all key/value pairs
-    pub fn iter(&mut self) -> lmdb::Iter<'a> {
+    pub fn iter(&mut self) -> Iter<'a, K, V> {
         match self {
-            &mut Cursor::ReadOnly(ref mut ro) => ro.iter(),
-            &mut Cursor::ReadWrite(ref mut rw) => rw.iter(),
+            &mut Cursor::ReadOnly(ref mut ro) => Iter(ro.iter(), PhantomData, PhantomData),
+            &mut Cursor::ReadWrite(ref mut rw) => Iter(rw.iter(), PhantomData, PhantomData),
             &mut Cursor::Phantom(_) => unreachable!(),
         }
     }
 
     #[inline]
     /// Iterate over key/values pairs starting at `key`
-    pub fn iter_from(&mut self, key: &'a K) -> lmdb::Iter<'a> {
+    pub fn iter_from(&mut self, key: &'a K) -> Iter<'a, K, V> {
         match self {
-            &mut Cursor::ReadOnly(ref mut ro) => ro.iter_from(key.as_ref()),
-            &mut Cursor::ReadWrite(ref mut rw) => rw.iter_from(key.as_ref()),
+            &mut Cursor::ReadOnly(ref mut ro) => Iter(ro.iter_from(key.as_ref()), PhantomData, PhantomData),
+            &mut Cursor::ReadWrite(ref mut rw) => Iter(rw.iter_from(key.as_ref()), PhantomData, PhantomData),
             &mut Cursor::Phantom(_) => unreachable!(),
         }
     }

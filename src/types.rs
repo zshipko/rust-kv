@@ -37,6 +37,16 @@ impl AsRef<[u8]> for Integer {
     }
 }
 
+impl <'a> From<&'a [u8]> for Integer {
+    fn from(buf: &'a [u8]) -> Integer {
+        let mut dst = Integer::from(0);
+        for i in 0..8 {
+            dst.0[i] = buf[i]
+        }
+        dst
+    }
+}
+
 /// A reference to an existing value slice
 #[derive(Debug, PartialEq, PartialOrd)]
 pub struct ValueRef<'a>(&'a [u8]);
@@ -94,7 +104,7 @@ impl<'a> AsRef<[u8]> for ValueMut<'a> {
     }
 }
 
-impl<S: AsRef<[u8]>> Key for S {}
+impl<'a, S: AsRef<[u8]>> Key for S {}
 
 impl<'a> Value<'a> for &'a [u8] {
     fn from_raw(raw: &'a [u8]) -> Self {
@@ -105,5 +115,13 @@ impl<'a> Value<'a> for &'a [u8] {
 impl<'a> Value<'a> for &'a str {
     fn from_raw(raw: &'a [u8]) -> Self {
         unsafe { str::from_utf8_unchecked(raw) }
+    }
+}
+
+impl<'a> Value<'a> for String {
+    fn from_raw(raw: &'a [u8]) -> Self {
+        unsafe {
+            String::from(str::from_utf8_unchecked(raw))
+        }
     }
 }
