@@ -147,7 +147,7 @@ fn test_config_encoding() {
     cfg.save("./config").unwrap();
     let cfg2 = Config::load("./config").unwrap();
     assert!(cfg == cfg2);
-    //let _ = fs::remove_file("./config");
+    let _ = fs::remove_file("./config");
 }
 
 #[test]
