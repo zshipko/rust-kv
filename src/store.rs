@@ -2,7 +2,7 @@ use std::marker::PhantomData;
 
 use lmdb;
 
-use config::Config;
+use config::{DatabaseFlags, Config};
 use error::Error;
 use txn::Txn;
 use std::collections::HashMap;
@@ -11,7 +11,7 @@ use types::{Integer, Key, Value};
 /// A Store is used to keep data on disk using LMDB
 pub struct Store {
     env: lmdb::Environment,
-    buckets: HashMap<Option<String>, lmdb::DatabaseFlags>,
+    buckets: HashMap<Option<String>, DatabaseFlags>,
 
     /// The `config` field stores the initial configuration values for the given store
     pub cfg: Config,
@@ -51,7 +51,7 @@ impl Store {
 
             store
                 .buckets
-                .insert(name, lmdb::DatabaseFlags::from_bits(*flag).unwrap());
+                .insert(name, flag.database_flags());
         }
 
         if !initialized_default {
@@ -125,5 +125,11 @@ impl Store {
     /// Sync data to disk
     pub fn sync(&self, force: bool) -> Result<(), Error> {
         Ok(self.env.sync(force)?)
+    }
+
+    #[inline]
+    /// Get database statistics
+    pub fn stat(&self) -> Result<lmdb::Stat, Error> {
+        Ok(self.env.stat()?)
     }
 }

@@ -1,6 +1,6 @@
 use std::{fs, path};
 
-use config::Config;
+use config::{Flag, Config};
 use store::Store;
 use types::Integer;
 use manager::Manager;
@@ -96,7 +96,12 @@ fn test_cbor_encoding() {
     assert!(path::Path::new(path.as_str()).exists());
 
     let mut txn = store.write_txn().unwrap();
-    txn.set(&bucket, "testing", Cbor::from(true)).unwrap();
+    for i in 0..2 {
+        match txn.set_no_overwrite(&bucket, "testing", Cbor::from(true)) {
+            Ok(_) => assert_eq!(i, 0),
+            Err(_) => assert_eq!(i, 1)
+        }
+    }
     txn.commit().unwrap();
 
     let txn = store.read_txn().unwrap();
@@ -119,7 +124,12 @@ fn test_json_encoding() {
     assert!(path::Path::new(path.as_str()).exists());
 
     let mut txn = store.write_txn().unwrap();
-    txn.set(&bucket, "testing", Json::from(true)).unwrap();
+    for i in 0..2 {
+        match txn.set_no_overwrite(&bucket, "testing", Json::from(true)) {
+            Ok(_) => assert_eq!(i, 0),
+            Err(_) => assert_eq!(i, 1)
+        }
+    }
     txn.commit().unwrap();
 
     let txn = store.read_txn().unwrap();
@@ -130,11 +140,14 @@ fn test_json_encoding() {
 
 #[test]
 fn test_config_encoding() {
-    let cfg = Config::default("./test");
+    let mut cfg = Config::default("./test");
+    cfg.bucket("a", None);
+    cfg.bucket("b", None);
+    cfg.bucket("c", Some(Flag::IntegerKey));
     cfg.save("./config").unwrap();
     let cfg2 = Config::load("./config").unwrap();
     assert!(cfg == cfg2);
-    let _ = fs::remove_file("./config");
+    //let _ = fs::remove_file("./config");
 }
 
 #[test]

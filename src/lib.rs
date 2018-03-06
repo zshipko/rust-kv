@@ -25,7 +25,7 @@ pub use encoding::cbor;
 #[cfg(feature = "json-value")]
 pub use encoding::json;
 
-pub use config::Config;
+pub use config::{Config, DatabaseFlags};
 pub use error::Error;
 pub use txn::Txn;
 pub use store::{Bucket, Store};

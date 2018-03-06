@@ -177,4 +177,14 @@ impl<'env, K: Key, V: Value<'env>> Txn<'env, K, V> {
             &mut Txn::Phantom(_) => unreachable!(),
         }
     }
+
+    /// Open a nested transaction
+    /// NOTE: you must alread be in a read/write transaction otherwise an error will be returned
+    pub fn txn<'a, K0: Key, V0: Value<'a>>(&'a mut self) -> Result<Txn<'a, K0, V0>, Error> {
+        match self {
+            &mut Txn::ReadOnly(_) => Err(Error::ReadOnly),
+            &mut Txn::ReadWrite(ref mut txn) => Ok(Txn::ReadWrite(txn.begin_nested_txn()?)),
+            &mut Txn::Phantom(_) => unreachable!(),
+        }
+    }
 }

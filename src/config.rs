@@ -10,6 +10,24 @@ pub use lmdb::DatabaseFlags;
 
 use error::Error;
 
+/// Bucket flag, used when creating/opening a bucket
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub enum Flag {
+    Default,
+    ReverseKey,
+    IntegerKey
+}
+
+impl Flag {
+    pub(crate) fn database_flags(&self) -> lmdb::DatabaseFlags {
+        match self {
+            &Flag::ReverseKey => DatabaseFlags::REVERSE_KEY,
+            &Flag::IntegerKey => DatabaseFlags::INTEGER_KEY,
+            &Flag::Default => DatabaseFlags::empty()
+        }
+    }
+}
+
 /// Config is used to create a new store
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct Config {
@@ -28,7 +46,7 @@ pub struct Config {
     pub readonly: bool,
 
     /// Whitelisted buckets and DatabaseFlags
-    pub buckets: HashMap<String, u32>,
+    pub buckets: HashMap<String, Flag>,
 }
 
 impl Config {
@@ -107,10 +125,10 @@ impl Config {
     }
 
     /// Add a bucket
-    pub fn bucket<S: AsRef<str>>(&mut self, name: S, flags: Option<DatabaseFlags>) -> &mut Config {
+    pub fn bucket<S: AsRef<str>>(&mut self, name: S, f: Option<Flag>) -> &mut Config {
         self.buckets.insert(
             String::from(name.as_ref()),
-            flags.unwrap_or(DatabaseFlags::empty()).bits(),
+            f.unwrap_or(Flag::Default)
         );
         self
     }
@@ -132,11 +150,19 @@ impl Config {
 
         let _ = fs::create_dir_all(&self.path);
 
-        Ok(builder
+        match builder
             .set_flags(flags)
             .set_max_readers(self.max_readers)
             .set_max_dbs((self.buckets.len() + 1) as u32)
             .set_map_size(self.map_size)
-            .open(self.path.as_path())?)
+            .open(self.path.as_path())
+        {
+
+            Ok(db) => Ok(db),
+            Err(e) => {
+                let _ = fs::remove_dir_all(&self.path);
+                Err(Error::LMDB(e))
+            }
+        }
     }
 }
