@@ -6,7 +6,7 @@ license = "ISC"
 keywords = ["key-value-store", "database", "lmdb"]
 repository = "https://github.com/zshipko/rust-kv"
 documentation = "https://docs.rs/kv"
-description = "A simple embedded key value store for Rust"
+description = "An embedded key/value store for Rust"
 
 [dependencies]
 lmdb = { version = "0.8" }

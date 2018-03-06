@@ -4,7 +4,7 @@
     <img src="https://img.shields.io/crates/v/kv.svg">
 </a>
 
-A simple embedded key/value store for Rust built on [LMDB](https://github.com/LMDB/lmdb)
+An embedded key/value store for Rust built on [LMDB](https://github.com/LMDB/lmdb)
 
 - Easy configuration
 - Integer keys
