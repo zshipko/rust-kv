@@ -5,6 +5,9 @@ use std::collections::HashMap;
 use toml;
 use lmdb;
 
+/// Database Flags
+pub use lmdb::DatabaseFlags;
+
 use error::Error;
 
 /// Config is used to create a new store
@@ -21,13 +24,11 @@ pub struct Config {
     /// The `path` field determines where the database will be created
     pub path: PathBuf,
 
-    /// The `buckets` field whitelists the named buckets
-    pub buckets: Vec<String>,
-
     /// Readonly sets the MDB_RDONLY flag when opening the database
     pub readonly: bool,
 
-    database_flags: HashMap<String, u32>,
+    /// Whitelisted buckets and DatabaseFlags
+    pub buckets: HashMap<String, u32>,
 }
 
 impl Config {
@@ -38,9 +39,8 @@ impl Config {
             max_readers: 5,
             flags: lmdb::EnvironmentFlags::empty().bits(),
             path: p.as_ref().to_path_buf(),
-            buckets: Vec::new(),
             readonly: false,
-            database_flags: HashMap::new(),
+            buckets: HashMap::new(),
         }
     }
 
@@ -107,8 +107,11 @@ impl Config {
     }
 
     /// Add a bucket
-    pub fn bucket<S: AsRef<str>>(&mut self, name: S) -> &mut Config {
-        self.buckets.push(String::from(name.as_ref()));
+    pub fn bucket<S: AsRef<str>>(&mut self, name: S, flags: Option<DatabaseFlags>) -> &mut Config {
+        self.buckets.insert(
+            String::from(name.as_ref()),
+            flags.unwrap_or(DatabaseFlags::empty()).bits()
+        );
         self
     }
 
@@ -116,23 +119,6 @@ impl Config {
     pub fn readonly(&mut self, readonly: bool) -> &mut Config {
         self.readonly = readonly;
         self
-    }
-
-    /// Set database flags
-    pub fn database_flag<S: AsRef<str>>(&mut self, name: S, f: lmdb::DatabaseFlags) -> &mut Config {
-        let mut flags = self.database_flags(name.as_ref());
-        flags.insert(f);
-        self.database_flags.insert(String::from(name.as_ref()), flags.bits());
-        self
-    }
-
-    /// Get database flags
-    pub fn database_flags<S: AsRef<str>>(&self, name: S) -> lmdb::DatabaseFlags {
-        lmdb::DatabaseFlags::from_bits(
-            *self.database_flags
-                .get(name.as_ref())
-                .unwrap_or(&lmdb::DatabaseFlags::empty().bits())
-        ).unwrap()
     }
 
     pub(crate) fn env(&mut self) -> Result<lmdb::Environment, Error> {

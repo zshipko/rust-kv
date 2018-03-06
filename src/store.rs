@@ -11,7 +11,7 @@ use types::{Integer, Key, Value};
 /// A Store is used to keep data on disk using LMDB
 pub struct Store {
     env: lmdb::Environment,
-    buckets: HashMap<String, u32>,
+    buckets: HashMap<Option<String>, lmdb::DatabaseFlags>,
 
     /// The `config` field stores the initial configuration values for the given store
     pub cfg: Config,
@@ -29,11 +29,30 @@ impl <'a, K: Key, V: Value<'a>> Bucket<'a, K, V> {
 
 impl Store {
     pub(crate) fn wrap(env: lmdb::Environment, config: Config) -> Store {
-        Store {
+        let mut store = Store {
             env: env,
             buckets: HashMap::new(),
             cfg: config,
+        };
+
+        let mut initialized_default = false;
+
+        for (bucket_name, flag) in &store.cfg.buckets {
+            let name = if bucket_name == "default" {
+                initialized_default = true;
+                None
+            } else {
+                Some(bucket_name.clone())
+            };
+
+            store.buckets.insert(name, lmdb::DatabaseFlags::from_bits(*flag).unwrap());
         }
+
+        if !initialized_default {
+            store.buckets.insert(None, lmdb::DatabaseFlags::empty());
+        }
+
+        store
     }
 
     /// Create a new store with the given configuration
@@ -42,47 +61,25 @@ impl Store {
         Ok(Self::wrap(env, config))
     }
 
-    /// Get the default bucket
-    pub fn default_bucket<'a, K: Key, V: Value<'a>>(&self) -> Result<Bucket<'a, K, V>, Error> {
-        match self.buckets.get("default") {
-            Some(flags) => {
-                let f = lmdb::DatabaseFlags::from_bits(*flags).unwrap();
-                Ok(Bucket(self.env.create_db(None, f)?, PhantomData, PhantomData))
-            },
-            None => Ok(Bucket(self.env.create_db(None, lmdb::DatabaseFlags::empty())?, PhantomData, PhantomData)),
-        }
-    }
-
     /// Get a named bucket
-    pub fn bucket<'a, S: AsRef<str>, K: Key, V: Value<'a>>(&self, name: S) -> Result<Bucket<'a, K, V>, Error> {
-        match self.buckets.get(name.as_ref()) {
+    pub fn bucket<'a, K: Key, V: Value<'a>>(&self, name: Option<&str>) -> Result<Bucket<'a, K, V>, Error> {
+        let n = name.map(String::from);
+        match self.buckets.get(&n) {
             Some(flags) => {
-                let f = lmdb::DatabaseFlags::from_bits(*flags).unwrap();
-                Ok(Bucket(self.env.create_db(Some(name.as_ref()), f)?, PhantomData, PhantomData))
+                Ok(Bucket(self.env.create_db(name, *flags)?, PhantomData, PhantomData))
             },
             None => Err(Error::InvalidBucket),
         }
     }
 
-    /// Get the default bucket
-    pub fn default_int_bucket<'a, V: Value<'a>>(&self) -> Result<Bucket<'a, Integer, V>, Error> {
-        match self.buckets.get("default") {
-            Some(flags) => {
-                let mut f = lmdb::DatabaseFlags::from_bits(*flags).unwrap();
-                f.insert(lmdb::DatabaseFlags::INTEGER_KEY);
-                Ok(Bucket(self.env.create_db(None, f)?, PhantomData, PhantomData))
-            },
-            None => Ok(Bucket(self.env.create_db(None, lmdb::DatabaseFlags::INTEGER_KEY)?, PhantomData, PhantomData)),
-        }
-    }
-
     /// Get a named bucket
-    pub fn int_bucket<'a, S: AsRef<str>, V: Value<'a>>(&self, name: S) -> Result<Bucket<'a, Integer, V>, Error> {
-        match self.buckets.get(name.as_ref()) {
+    pub fn int_bucket<'a, V: Value<'a>>(&self, name: Option<&str>) -> Result<Bucket<'a, Integer, V>, Error> {
+        let n = name.map(String::from);
+        match self.buckets.get(&n) {
             Some(flags) => {
-                let mut f = lmdb::DatabaseFlags::from_bits(*flags).unwrap();
+                let mut f = flags.clone();
                 f.insert(lmdb::DatabaseFlags::INTEGER_KEY);
-                Ok(Bucket(self.env.create_db(Some(name.as_ref()), f)?, PhantomData, PhantomData))
+                Ok(Bucket(self.env.create_db(name, f)?, PhantomData, PhantomData))
             },
             None => Err(Error::InvalidBucket),
         }

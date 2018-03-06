@@ -18,7 +18,7 @@ fn test_basic() {
     // Create a new store
     let cfg = Config::default(path.clone());
     let store = Store::new(cfg).unwrap();
-    let bucket = store.default_bucket::<&str, &str>().unwrap();
+    let bucket = store.bucket::<&str, &str>(None).unwrap();
     assert!(path::Path::new(path.as_str()).exists());
 
     let mut txn = store.write_txn().unwrap();
@@ -37,7 +37,7 @@ fn test_integer_keys() {
     // Create a new store
     let cfg = Config::default(path.clone());
     let store = Store::new(cfg).unwrap();
-    let bucket = store.default_int_bucket::<&str>().unwrap();
+    let bucket = store.int_bucket::<&str>(None).unwrap();
     assert!(path::Path::new(path.as_str()).exists());
 
     let mut txn = store.write_txn().unwrap();
@@ -57,7 +57,7 @@ fn test_cursor() {
     // Create a new store
     let cfg = Config::default(path.clone());
     let store = Store::new(cfg).unwrap();
-    let bucket = store.default_int_bucket::<String>().unwrap();
+    let bucket = store.int_bucket::<String>(None).unwrap();
     assert!(path::Path::new(path.as_str()).exists());
 
     let mut txn = store.write_txn().unwrap();
@@ -92,7 +92,7 @@ fn test_cbor_encoding() {
     // Create a new store
     let cfg = Config::default(path.clone());
     let store = Store::new(cfg).unwrap();
-    let bucket = store.default_bucket::<&str, ValueBuf<Cbor>>().unwrap();
+    let bucket = store.bucket::<&str, ValueBuf<Cbor>>(None).unwrap();
     assert!(path::Path::new(path.as_str()).exists());
 
     let mut txn = store.write_txn().unwrap();
@@ -115,7 +115,7 @@ fn test_json_encoding() {
     // Create a new store
     let cfg = Config::default(path.clone());
     let store = Store::new(cfg).unwrap();
-    let bucket = store.default_bucket::<&str, ValueBuf<Json>>().unwrap();
+    let bucket = store.bucket::<&str, ValueBuf<Json>>(None).unwrap();
     assert!(path::Path::new(path.as_str()).exists());
 
     let mut txn = store.write_txn().unwrap();
@@ -144,12 +144,13 @@ fn test_manager() {
     println!("{}", path);
 
     // Create a new store
-    let cfg = Config::default(path.clone());
+    let mut cfg = Config::default(path.clone());
+    cfg.bucket("test", None);
     let mut mgr = Manager::new();
 
     let handle = mgr.open(cfg).unwrap();
     let store = handle.write().unwrap();
-    let bucket = store.default_bucket::<&str, &str>().unwrap();
+    let bucket = store.bucket::<&str, &str>(Some("test")).unwrap();
     println!("{}", path.as_str());
     assert!(path::Path::new(path.as_str()).exists());
 
