@@ -91,3 +91,130 @@ pub mod json {
         }
     }
 }
+
+#[cfg(feature = "bincode-value")]
+/// Bincode encoding
+pub mod bincode {
+    extern crate bincode;
+    use std::collections::BTreeMap;
+    use std::cmp::Ordering;
+
+    #[derive(Debug, Clone, Copy, PartialEq, PartialOrd, Serialize, Deserialize)]
+    /// Float wrapper
+    pub struct Float(f64);
+
+    impl Eq for Float {
+
+    }
+
+    impl Ord for Float {
+        fn cmp(&self, other: &Self) -> Ordering {
+            self.partial_cmp(other).unwrap_or(Ordering::Less)
+        }
+    }
+
+    impl From<f64> for Float {
+        fn from(f: f64) -> Float {
+            Float(f)
+        }
+    }
+
+    impl From<Float> for f64 {
+        fn from(f: Float) -> f64 {
+            f.0
+        }
+    }
+
+    #[derive(Debug, Clone, PartialOrd, Ord, PartialEq, Eq, Serialize, Deserialize)]
+    /// Bincode data
+    pub enum Data {
+        /// Null value
+        Null,
+
+        /// Boolean
+        Bool(bool),
+
+        /// Integer
+        Int(i64),
+
+        /// Double
+        Float(Float),
+
+        /// String
+        String(String),
+
+        /// Array
+        Array(Vec<Data>),
+
+        /// Dictionary
+        Dict(BTreeMap<Data, Data>),
+
+        /// Custom value
+        Custom(String, Box<Data>)
+    }
+
+    impl From<bool> for Data {
+        fn from(b: bool) -> Data {
+            Data::Bool(b)
+        }
+    }
+
+    impl From<i64> for Data {
+        fn from(i: i64) -> Data {
+            Data::Int(i)
+        }
+    }
+
+    impl From<f64> for Data {
+        fn from(f: f64) -> Data {
+            Data::Float(Float(f))
+        }
+    }
+
+    impl From<String> for Data {
+        fn from(s: String) -> Data {
+            Data::String(s)
+        }
+    }
+
+    impl From<Vec<Data>> for Data {
+        fn from(v: Vec<Data>) -> Data {
+            Data::Array(v)
+        }
+    }
+
+    impl From<BTreeMap<Data, Data>> for Data {
+        fn from(d: BTreeMap<Data, Data>) -> Data {
+            Data::Dict(d)
+        }
+    }
+
+    impl From<(String, Data)> for Data {
+        fn from((s, d): (String, Data)) -> Data {
+            Data::Custom(s, Box::new(d))
+        }
+    }
+
+    impl ::Encoding for Data {
+        fn encode_to<W: ::std::io::Write>(&self, w: &mut W) -> Result<(), ::Error> {
+            match bincode::serialize_into(w, self) {
+                Ok(()) => Ok(()),
+                Err(_) => Err(::Error::InvalidEncoding),
+            }
+        }
+
+        fn decode_from<R: ::std::io::Read>(r: &mut R) -> Result<Data, ::Error> {
+            match bincode::deserialize_from(r) {
+                Ok(x) => Ok(x),
+                Err(_) => Err(::Error::InvalidEncoding),
+            }
+        }
+
+        fn decode<'a, V: ::Value<'a>>(val: &'a V) -> Result<Data, ::Error> {
+            match bincode::deserialize(val.as_ref()) {
+                Ok(x) => Ok(x),
+                Err(_) => Err(::Error::InvalidEncoding),
+            }
+        }
+    }
+}

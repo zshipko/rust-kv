@@ -16,8 +16,10 @@ serde_derive = { version = "1" }
 toml = { version = "0.4" }
 serde_cbor = { version = "0.8", optional = true }
 serde_json = { version = "1", optional = true }
+bincode = { version = "1", optional = true}
 
 [features]
 default = []
 cbor-value = ["serde_cbor"]
 json-value = ["serde_json"]
+bincode-value = ["bincode"]

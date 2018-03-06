@@ -16,6 +16,8 @@ An embedded key/value store for Rust built on [LMDB](https://github.com/LMDB/lmd
     - CBOR value encoding using `serde`
 * `json-value`
     - JSON value encoding using `serde`
+* `bincode-value`
+    - bincode value encoding using `serde`
 
 ## Documentation
 

@@ -138,6 +138,35 @@ fn test_json_encoding() {
     txn.abort();
 }
 
+
+#[cfg(feature = "bincode-value")]
+#[test]
+fn test_bincode_encoding() {
+    use bincode::Data;
+    use buf::ValueBuf;
+    let path = reset("bincode");
+
+    // Create a new store
+    let cfg = Config::default(path.clone());
+    let store = Store::new(cfg).unwrap();
+    let bucket = store.bucket::<&str, ValueBuf<Data>>(None).unwrap();
+    assert!(path::Path::new(path.as_str()).exists());
+
+    let mut txn = store.write_txn().unwrap();
+    for i in 0..2 {
+        match txn.set_no_overwrite(&bucket, "testing", Data::from(12345)) {
+            Ok(_) => assert_eq!(i, 0),
+            Err(_) => assert_eq!(i, 1)
+        }
+    }
+    txn.commit().unwrap();
+
+    let txn = store.read_txn().unwrap();
+    let v = txn.get(&bucket, "testing").unwrap().inner().unwrap();
+    assert_eq!(v, Data::from(12345));
+    txn.abort();
+}
+
 #[test]
 fn test_config_encoding() {
     let mut cfg = Config::default("./test");

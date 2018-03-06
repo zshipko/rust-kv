@@ -24,6 +24,8 @@ mod test;
 pub use encoding::cbor;
 #[cfg(feature = "json-value")]
 pub use encoding::json;
+#[cfg(feature = "bincode-value")]
+pub use encoding::bincode;
 
 pub use config::{Config, DatabaseFlags};
 pub use error::Error;
