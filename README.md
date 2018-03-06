@@ -66,6 +66,3 @@ See [https://docs.rs/kv](https://docs.rs/kv) for more information
 * `json-value`
     - JSON value encoding using `serde`
 
-
-
-
