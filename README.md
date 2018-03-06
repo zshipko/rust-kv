@@ -10,9 +10,18 @@ An embedded key/value store for Rust built on [LMDB](https://github.com/LMDB/lmd
 - Integer keys
 - Serde integration (see the Encoding trait)
 
+## Optional features
 
-## Example
+* `cbor-value`
+    - CBOR value encoding using `serde`
+* `json-value`
+    - JSON value encoding using `serde`
 
+## Documentation
+
+See [https://docs.rs/kv](https://docs.rs/kv)
+
+## Examples
 
 ```rust
 // Create the default configuration
@@ -56,13 +65,4 @@ println!("testing => {}", val);
 // You can also abort a transaction
 txn.abort();
 ```
-
-See [https://docs.rs/kv](https://docs.rs/kv) for more information
-
-## Optional
-
-* `cbor-value`
-    - CBOR value encoding using `serde`
-* `json-value`
-    - JSON value encoding using `serde`
 
