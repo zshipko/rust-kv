@@ -11,17 +11,29 @@ A simple embedded key/value store for Rust built on [LMDB](https://github.com/LM
 
 
 ```rust
-let cfg = Config::default("./test.db");
-let manager = Manager::new();
-let store = Store::new(cfg).unwrap();
-let bucket = store.default_bucket::<&str, &str>().unwrap();
+// Configuration
+let mut cfg = Config::default(path);
+cfg.bucket("test", None);
 
+// Create a manager
+let mut mgr = Manager::new();
+
+// Get a Store handle
+let handle = mgr.open(cfg).unwrap();
+let store = handle.write().unwrap();
+
+// Load a bucket
+let bucket = store.bucket::<&str, &str>(Some("test")).unwrap();
+
+/// Write a value
 let mut txn = store.write_txn().unwrap();
-txn.set(bucket, "testing", "abc123").unwrap();
+txn.set(&bucket, "testing", "abc123").unwrap();
 txn.commit().unwrap();
 
+/// Read a value
 let txn = store.read_txn().unwrap();
-assert_eq!(txn.get(bucket, "testing").unwrap(), "abc123");
+let val = txn.get(&bucket, "testing").unwrap();
+println!("testing => {}", val);
 txn.abort();
 ```
 

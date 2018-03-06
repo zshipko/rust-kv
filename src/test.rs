@@ -141,8 +141,6 @@ fn test_config_encoding() {
 fn test_manager() {
     let path = reset("manager");
 
-    println!("{}", path);
-
     // Create a new store
     let mut cfg = Config::default(path.clone());
     cfg.bucket("test", None);
@@ -151,7 +149,6 @@ fn test_manager() {
     let handle = mgr.open(cfg).unwrap();
     let store = handle.write().unwrap();
     let bucket = store.bucket::<&str, &str>(Some("test")).unwrap();
-    println!("{}", path.as_str());
     assert!(path::Path::new(path.as_str()).exists());
 
     let mut txn = store.write_txn().unwrap();
