@@ -52,14 +52,15 @@ pub enum Cursor<'a, K, V> {
 /// Iter wrapper
 pub struct Iter<'a, K, V>(lmdb::Iter<'a>, PhantomData<K>, PhantomData<V>);
 
-impl <'a, K: Key, V: Value<'a>> Iterator for Iter<'a, K, V>
-where K: From<&'a [u8]>
+impl<'a, K: Key, V: Value<'a>> Iterator for Iter<'a, K, V>
+where
+    K: From<&'a [u8]>,
 {
     type Item = (K, V);
     fn next(&mut self) -> Option<(K, V)> {
         let (k, v) = match lmdb::Iter::next(&mut self.0) {
             Some((k, v)) => (k, v),
-            None => return None
+            None => return None,
         };
         Some((K::from(k), V::from_raw(v)))
     }
@@ -97,8 +98,12 @@ impl<'a, K: Key, V: Value<'a>> Cursor<'a, K, V> {
     /// Iterate over key/values pairs starting at `key`
     pub fn iter_from(&mut self, key: &'a K) -> Iter<'a, K, V> {
         match self {
-            &mut Cursor::ReadOnly(ref mut ro) => Iter(ro.iter_from(key.as_ref()), PhantomData, PhantomData),
-            &mut Cursor::ReadWrite(ref mut rw) => Iter(rw.iter_from(key.as_ref()), PhantomData, PhantomData),
+            &mut Cursor::ReadOnly(ref mut ro) => {
+                Iter(ro.iter_from(key.as_ref()), PhantomData, PhantomData)
+            }
+            &mut Cursor::ReadWrite(ref mut rw) => {
+                Iter(rw.iter_from(key.as_ref()), PhantomData, PhantomData)
+            }
             &mut Cursor::Phantom(_) => unreachable!(),
         }
     }
@@ -108,9 +113,11 @@ impl<'a, K: Key, V: Value<'a>> Cursor<'a, K, V> {
     pub fn set<V0: Into<V>>(&mut self, key: &'a K, value: V0) -> Result<(), Error> {
         match self {
             &mut Cursor::ReadOnly(_) => Err(Error::ReadOnly),
-            &mut Cursor::ReadWrite(ref mut rw) => {
-                Ok(rw.put(&key.as_ref(), &value.into().as_ref(), lmdb::WriteFlags::empty())?)
-            }
+            &mut Cursor::ReadWrite(ref mut rw) => Ok(rw.put(
+                &key.as_ref(),
+                &value.into().as_ref(),
+                lmdb::WriteFlags::empty(),
+            )?),
             &mut Cursor::Phantom(_) => unreachable!(),
         }
     }

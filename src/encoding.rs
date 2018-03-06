@@ -23,7 +23,7 @@ pub trait Encoding: Sized {
     fn decode<'a, V: Value<'a>>(val: &'a V) -> Result<Self, Error>;
 }
 
-impl <E: Encoding> From<E> for ValueBuf<E> {
+impl<E: Encoding> From<E> for ValueBuf<E> {
     fn from(x: E) -> ::ValueBuf<E> {
         ::Encoding::encode(&x).unwrap()
     }
@@ -41,21 +41,21 @@ pub mod cbor {
         fn encode_to<W: ::std::io::Write>(&self, w: &mut W) -> Result<(), ::Error> {
             match serde_cbor::to_writer(w, self) {
                 Ok(()) => Ok(()),
-                Err(_) => Err(::Error::InvalidEncoding)
+                Err(_) => Err(::Error::InvalidEncoding),
             }
         }
 
         fn decode_from<R: ::std::io::Read>(r: &mut R) -> Result<Cbor, ::Error> {
             match serde_cbor::from_reader(r) {
                 Ok(x) => Ok(x),
-                Err(_) => Err(::Error::InvalidEncoding)
+                Err(_) => Err(::Error::InvalidEncoding),
             }
         }
 
         fn decode<'a, V: ::Value<'a>>(v: &'a V) -> Result<Cbor, ::Error> {
             match serde_cbor::from_slice(v.as_ref()) {
                 Ok(x) => Ok(x),
-                Err(_) => Err(::Error::InvalidEncoding)
+                Err(_) => Err(::Error::InvalidEncoding),
             }
         }
     }
@@ -72,23 +72,22 @@ pub mod json {
         fn encode_to<W: ::std::io::Write>(&self, w: &mut W) -> Result<(), ::Error> {
             match serde_json::to_writer(w, self) {
                 Ok(()) => Ok(()),
-                Err(_) => Err(::Error::InvalidEncoding)
+                Err(_) => Err(::Error::InvalidEncoding),
             }
         }
 
         fn decode_from<R: ::std::io::Read>(r: &mut R) -> Result<Json, ::Error> {
             match serde_json::from_reader(r) {
                 Ok(x) => Ok(x),
-                Err(_) => Err(::Error::InvalidEncoding)
+                Err(_) => Err(::Error::InvalidEncoding),
             }
         }
 
         fn decode<'a, V: ::Value<'a>>(val: &'a V) -> Result<Json, ::Error> {
             match serde_json::from_slice(val.as_ref()) {
                 Ok(x) => Ok(x),
-                Err(_) => Err(::Error::InvalidEncoding)
+                Err(_) => Err(::Error::InvalidEncoding),
             }
         }
     }
 }
-

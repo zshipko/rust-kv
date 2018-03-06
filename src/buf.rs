@@ -9,7 +9,7 @@ use error::Error;
 #[derive(Debug, Clone, PartialEq, PartialOrd)]
 pub struct ValueBuf<T>(pub Vec<u8>, PhantomData<T>);
 
-impl <T: Encoding> ValueBuf<T> {
+impl<T: Encoding> ValueBuf<T> {
     /// Create an empty value buffer
     pub fn empty() -> ValueBuf<T> {
         ValueBuf(Vec::new(), PhantomData)
@@ -26,7 +26,7 @@ impl <T: Encoding> ValueBuf<T> {
     }
 }
 
-impl <T: Encoding> AsRef<[u8]> for ValueBuf<T> {
+impl<T: Encoding> AsRef<[u8]> for ValueBuf<T> {
     fn as_ref(&self) -> &[u8] {
         self.0.as_ref()
     }
@@ -38,13 +38,13 @@ impl<'a, T: Encoding> Value<'a> for ValueBuf<T> {
     }
 }
 
-impl <T: Encoding> Read for ValueBuf<T> {
+impl<T: Encoding> Read for ValueBuf<T> {
     fn read(&mut self, buf: &mut [u8]) -> io::Result<usize> {
         self.0.as_slice().read(buf)
     }
 }
 
-impl <T: Encoding> Write for ValueBuf<T> {
+impl<T: Encoding> Write for ValueBuf<T> {
     fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
         self.0.write(buf)
     }
@@ -63,4 +63,3 @@ impl<'a> Write for ValueMut<'a> {
         self.as_mut().flush()
     }
 }
-

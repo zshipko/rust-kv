@@ -8,43 +8,28 @@
 // CONDITIONS OF ANY KIND, either express or implied. See the License for the
 // specific language governing permissions and limitations under the License.
 
-use std::collections::{
-    BTreeMap,
-};
+use std::collections::BTreeMap;
 
-use std::collections::btree_map::{
-    Entry,
-};
+use std::collections::btree_map::Entry;
 
-use std::path::{
-    Path,
-    PathBuf,
-};
+use std::path::{Path, PathBuf};
 
 use std::fs;
 
-use std::sync::{
-    Arc,
-    Mutex,
-    RwLock,
-};
+use std::sync::{Arc, Mutex, RwLock};
 
-use error::{
-    Error,
-};
+use error::Error;
 
-use store::{
-    Store
-};
+use store::Store;
 
-use config::{
-    Config
-};
+use config::Config;
+
+pub type Handle = Arc<RwLock<Store>>;
 
 /// A process is only permitted to have one open handle to each database. This manager
 /// exists to enforce that constraint: don't open databases directly.
 pub struct Manager {
-    stores: Mutex<BTreeMap<PathBuf, Arc<RwLock<Store>>>>,
+    stores: Mutex<BTreeMap<PathBuf, Handle>>,
 }
 
 impl Manager {
@@ -56,15 +41,16 @@ impl Manager {
     }
 
     /// Return the open store at `path`, returning `None` if it has not already been opened.
-    pub fn get<'p, P>(&self, path: P) -> Result<Option<Arc<RwLock<Store>>>, Error>
-    where P: Into<&'p Path>
+    pub fn get<'p, P>(&self, path: P) -> Result<Option<Handle>, Error>
+    where
+        P: AsRef<Path>,
     {
-        let canonical = path.into().canonicalize()?;
+        let canonical = path.as_ref().canonicalize()?;
         Ok(self.stores.lock().unwrap().get(&canonical).cloned())
     }
 
     /// Return the open store at cfg.path, or create it using the given config.
-    pub fn open(&mut self, cfg: Config) -> Result<Arc<RwLock<Store>>, Error>{
+    pub fn open(&mut self, cfg: Config) -> Result<Handle, Error> {
         let _ = fs::create_dir_all(&cfg.path);
         let canonical = cfg.path.as_path().canonicalize()?;
         let mut map = self.stores.lock().unwrap();
@@ -76,30 +62,13 @@ impl Manager {
             }
         })
     }
-}
 
-#[cfg(test)]
-mod test {
-    extern crate tempdir;
-
-    use self::tempdir::TempDir;
-    use std::fs;
-
-    use super::*;
-
-    /// Test that the manager will return the same Handle instance each time for each path.
-    #[test]
-    fn test_same() {
-        let root = TempDir::new("test_same").expect("tempdir");
-        fs::create_dir_all(root.path()).expect("dir created");
-
-        let mut manager = Manager::new();
-
-        let p = root.path();
-        assert!(manager.get(p).expect("success").is_none());
-
-        let created_arc = manager.open(Config::default(p)).expect("created");
-        let fetched_arc = manager.get(p).expect("success").expect("existed");
-        assert!(Arc::ptr_eq(&created_arc, &fetched_arc));
+    /// Load a store from a configuration file
+    pub fn load_config_and_open<P>(&mut self, path: P) -> Result<Handle, Error>
+    where
+        P: AsRef<Path>,
+    {
+        let config = Config::load(path)?;
+        self.open(config)
     }
 }

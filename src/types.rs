@@ -1,8 +1,7 @@
 use std::{mem, str};
 
 /// A Key can be used as a key to a database
-pub trait Key: AsRef<[u8]> {
-}
+pub trait Key: AsRef<[u8]> {}
 
 /// A Value can be stored in a database
 pub trait Value<'a>: AsRef<[u8]> {
@@ -38,7 +37,7 @@ impl AsRef<[u8]> for Integer {
     }
 }
 
-impl <'a> From<&'a [u8]> for Integer {
+impl<'a> From<&'a [u8]> for Integer {
     fn from(buf: &'a [u8]) -> Integer {
         let mut dst = Integer::from(0);
         for i in 0..8 {
@@ -105,8 +104,7 @@ impl<'a> AsRef<[u8]> for ValueMut<'a> {
     }
 }
 
-impl<'a, S: AsRef<[u8]>> Key for S {
-}
+impl<'a, S: AsRef<[u8]>> Key for S {}
 
 impl<'a> Value<'a> for &'a [u8] {
     fn from_raw(raw: &'a [u8]) -> Self {
@@ -122,8 +120,6 @@ impl<'a> Value<'a> for &'a str {
 
 impl<'a> Value<'a> for String {
     fn from_raw(raw: &'a [u8]) -> Self {
-        unsafe {
-            String::from(str::from_utf8_unchecked(raw))
-        }
+        unsafe { String::from(str::from_utf8_unchecked(raw)) }
     }
 }

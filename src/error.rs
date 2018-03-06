@@ -27,7 +27,7 @@ pub enum Error {
     InvalidConfiguration,
 
     /// Directory doesn't exist
-    DirectoryNotFound
+    DirectoryNotFound,
 }
 
 impl From<lmdb::Error> for Error {

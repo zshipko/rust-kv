@@ -18,9 +18,13 @@ pub struct Store {
 }
 
 /// A Bucket represents a single database, or section of the Store
-pub struct Bucket<'a, K: Key, V: 'a + Value<'a>>(lmdb::Database, PhantomData<K>, PhantomData<&'a V>);
+pub struct Bucket<'a, K: Key, V: 'a + Value<'a>>(
+    lmdb::Database,
+    PhantomData<K>,
+    PhantomData<&'a V>,
+);
 
-impl <'a, K: Key, V: Value<'a>> Bucket<'a, K, V> {
+impl<'a, K: Key, V: Value<'a>> Bucket<'a, K, V> {
     /// Provides access to the underlying LMDB dbi handle
     pub fn db(&self) -> lmdb::Database {
         self.0
@@ -45,7 +49,9 @@ impl Store {
                 Some(bucket_name.clone())
             };
 
-            store.buckets.insert(name, lmdb::DatabaseFlags::from_bits(*flag).unwrap());
+            store
+                .buckets
+                .insert(name, lmdb::DatabaseFlags::from_bits(*flag).unwrap());
         }
 
         if !initialized_default {
@@ -62,25 +68,37 @@ impl Store {
     }
 
     /// Get a named bucket
-    pub fn bucket<'a, K: Key, V: Value<'a>>(&self, name: Option<&str>) -> Result<Bucket<'a, K, V>, Error> {
+    pub fn bucket<'a, K: Key, V: Value<'a>>(
+        &self,
+        name: Option<&str>,
+    ) -> Result<Bucket<'a, K, V>, Error> {
         let n = name.map(String::from);
         match self.buckets.get(&n) {
-            Some(flags) => {
-                Ok(Bucket(self.env.create_db(name, *flags)?, PhantomData, PhantomData))
-            },
+            Some(flags) => Ok(Bucket(
+                self.env.create_db(name, *flags)?,
+                PhantomData,
+                PhantomData,
+            )),
             None => Err(Error::InvalidBucket),
         }
     }
 
     /// Get a named bucket
-    pub fn int_bucket<'a, V: Value<'a>>(&self, name: Option<&str>) -> Result<Bucket<'a, Integer, V>, Error> {
+    pub fn int_bucket<'a, V: Value<'a>>(
+        &self,
+        name: Option<&str>,
+    ) -> Result<Bucket<'a, Integer, V>, Error> {
         let n = name.map(String::from);
         match self.buckets.get(&n) {
             Some(flags) => {
                 let mut f = flags.clone();
                 f.insert(lmdb::DatabaseFlags::INTEGER_KEY);
-                Ok(Bucket(self.env.create_db(name, f)?, PhantomData, PhantomData))
-            },
+                Ok(Bucket(
+                    self.env.create_db(name, f)?,
+                    PhantomData,
+                    PhantomData,
+                ))
+            }
             None => Err(Error::InvalidBucket),
         }
     }

@@ -1,5 +1,5 @@
-use std::path::{PathBuf, Path};
-use std::{io, fs};
+use std::path::{Path, PathBuf};
+use std::{fs, io};
 use std::collections::HashMap;
 
 use toml;
@@ -48,7 +48,7 @@ impl Config {
     pub fn save_to<W: io::Write>(&self, mut w: W) -> Result<(), Error> {
         let s = match toml::to_string(self) {
             Ok(s) => s,
-            Err(_) => return Err(Error::InvalidConfiguration)
+            Err(_) => return Err(Error::InvalidConfiguration),
         };
         Ok(w.write_all(s.as_ref())?)
     }
@@ -65,7 +65,7 @@ impl Config {
         r.read_to_end(&mut buf)?;
         match toml::from_slice(buf.as_ref()) {
             Ok(cfg) => Ok(cfg),
-            Err(_) => Err(Error::InvalidConfiguration)
+            Err(_) => Err(Error::InvalidConfiguration),
         }
     }
 
@@ -110,7 +110,7 @@ impl Config {
     pub fn bucket<S: AsRef<str>>(&mut self, name: S, flags: Option<DatabaseFlags>) -> &mut Config {
         self.buckets.insert(
             String::from(name.as_ref()),
-            flags.unwrap_or(DatabaseFlags::empty()).bits()
+            flags.unwrap_or(DatabaseFlags::empty()).bits(),
         );
         self
     }

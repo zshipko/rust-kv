@@ -68,7 +68,12 @@ impl<'env, K: Key, V: Value<'env>> Txn<'env, K, V> {
     }
 
     /// Sets the value associated with the given key
-    pub fn set<V0: Into<V>>(&mut self, bucket: &Bucket<'env, K, V>, key: K, val: V0) -> Result<(), Error> {
+    pub fn set<V0: Into<V>>(
+        &mut self,
+        bucket: &Bucket<'env, K, V>,
+        key: K,
+        val: V0,
+    ) -> Result<(), Error> {
         match self {
             &mut Txn::ReadOnly(_) => Err(Error::ReadOnly),
             &mut Txn::ReadWrite(ref mut txn) => Ok(txn.put(
@@ -148,7 +153,10 @@ impl<'env, K: Key, V: Value<'env>> Txn<'env, K, V> {
     }
 
     /// Open a new readonly cursor
-    pub fn read_cursor(&'env self, bucket: &Bucket<'env, K, V>) -> Result<Cursor<'env, K, V>, Error> {
+    pub fn read_cursor(
+        &'env self,
+        bucket: &Bucket<'env, K, V>,
+    ) -> Result<Cursor<'env, K, V>, Error> {
         match self {
             &Txn::ReadOnly(ref txn) => Ok(Cursor::read_only(txn.open_ro_cursor(bucket.db())?)),
             &Txn::ReadWrite(ref txn) => Ok(Cursor::read_only(txn.open_ro_cursor(bucket.db())?)),
@@ -157,7 +165,10 @@ impl<'env, K: Key, V: Value<'env>> Txn<'env, K, V> {
     }
 
     /// Open a new writable cursor
-    pub fn write_cursor(&'env mut self, bucket: &Bucket<'env, K, V>) -> Result<Cursor<'env, K, V>, Error> {
+    pub fn write_cursor(
+        &'env mut self,
+        bucket: &Bucket<'env, K, V>,
+    ) -> Result<Cursor<'env, K, V>, Error> {
         match self {
             &mut Txn::ReadOnly(_) => Err(Error::ReadOnly),
             &mut Txn::ReadWrite(ref mut txn) => {
