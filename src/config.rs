@@ -1,5 +1,6 @@
 use std::path::{PathBuf, Path};
 use std::{io, fs};
+use std::collections::HashMap;
 
 use toml;
 use lmdb;
@@ -15,7 +16,7 @@ pub struct Config {
     /// The `max_readers` field determines the maximum number of readers for a given database
     pub max_readers: u32,
 
-    flags: u32, //lmdb::EnvironmentFlags,
+    flags: u32,
 
     /// The `path` field determines where the database will be created
     pub path: PathBuf,
@@ -26,7 +27,7 @@ pub struct Config {
     /// Readonly sets the MDB_RDONLY flag when opening the database
     pub readonly: bool,
 
-    database_flags: u32, // lmdb::DatabaseFlags,
+    database_flags: HashMap<String, u32>,
 }
 
 impl Config {
@@ -39,7 +40,7 @@ impl Config {
             path: p.as_ref().to_path_buf(),
             buckets: Vec::new(),
             readonly: false,
-            database_flags: lmdb::DatabaseFlags::empty().bits(),
+            database_flags: HashMap::new(),
         }
     }
 
@@ -118,16 +119,20 @@ impl Config {
     }
 
     /// Set database flags
-    pub fn database_flag(&mut self, f: lmdb::DatabaseFlags) -> &mut Config {
-        let mut flags = self.database_flags();
+    pub fn database_flag<S: AsRef<str>>(&mut self, name: S, f: lmdb::DatabaseFlags) -> &mut Config {
+        let mut flags = self.database_flags(name.as_ref());
         flags.insert(f);
-        self.database_flags = flags.bits();
+        self.database_flags.insert(String::from(name.as_ref()), flags.bits());
         self
     }
 
     /// Get database flags
-    pub fn database_flags(&self) -> lmdb::DatabaseFlags {
-        lmdb::DatabaseFlags::from_bits(self.database_flags).unwrap()
+    pub fn database_flags<S: AsRef<str>>(&self, name: S) -> lmdb::DatabaseFlags {
+        lmdb::DatabaseFlags::from_bits(
+            *self.database_flags
+                .get(name.as_ref())
+                .unwrap_or(&lmdb::DatabaseFlags::empty().bits())
+        ).unwrap()
     }
 
     pub(crate) fn env(&mut self) -> Result<lmdb::Environment, Error> {

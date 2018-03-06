@@ -12,17 +12,17 @@ A simple embedded key/value store for Rust built on [LMDB](https://github.com/LM
 
 ```rust
 let cfg = Config::default("./test.db");
-let store = Store::<&str>::new(cfg).unwrap();
-let bucket = store.default().unwrap();
+let manager = Manager::new();
+let store = Store::new(cfg).unwrap();
+let bucket = store.default_bucket::<&str, &str>().unwrap();
 
-let mut txn = store.write_txn::<&str>().unwrap();
+let mut txn = store.write_txn().unwrap();
 txn.set(bucket, "testing", "abc123").unwrap();
 txn.commit().unwrap();
 
-let txn = store.read_txn::<&str>().unwrap();
+let txn = store.read_txn().unwrap();
 assert_eq!(txn.get(bucket, "testing").unwrap(), "abc123");
 txn.abort();
-}
 ```
 
 See [https://docs.rs/kv](https://docs.rs/kv) for more information

@@ -24,7 +24,10 @@ pub enum Error {
     InvalidEncoding,
 
     /// Configuration is invalid
-    InvalidConfiguration
+    InvalidConfiguration,
+
+    /// Directory doesn't exist
+    DirectoryNotFound
 }
 
 impl From<lmdb::Error> for Error {
@@ -32,6 +35,7 @@ impl From<lmdb::Error> for Error {
         match err {
             lmdb::Error::NotFound => Error::NotFound,
             lmdb::Error::BadDbi => Error::InvalidBucket,
+            lmdb::Error::Other(2) => Error::DirectoryNotFound,
             _ => Error::LMDB(err),
         }
     }

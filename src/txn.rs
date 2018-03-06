@@ -59,7 +59,7 @@ impl<'env, K: Key, V: Value<'env>> Txn<'env, K, V> {
     }
 
     /// Gets the value associated with the given key
-    pub fn get(&'env self, bucket: &Bucket, key: K) -> Result<V, Error> {
+    pub fn get(&'env self, bucket: &Bucket<'env, K, V>, key: K) -> Result<V, Error> {
         match self {
             &Txn::ReadOnly(ref txn) => Ok(V::from_raw(txn.get(bucket.db(), &key.as_ref())?)),
             &Txn::ReadWrite(ref txn) => Ok(V::from_raw(txn.get(bucket.db(), &key.as_ref())?)),
@@ -68,7 +68,7 @@ impl<'env, K: Key, V: Value<'env>> Txn<'env, K, V> {
     }
 
     /// Sets the value associated with the given key
-    pub fn set<V0: Into<V>>(&mut self, bucket: &Bucket, key: K, val: V0) -> Result<(), Error> {
+    pub fn set<V0: Into<V>>(&mut self, bucket: &Bucket<'env, K, V>, key: K, val: V0) -> Result<(), Error> {
         match self {
             &mut Txn::ReadOnly(_) => Err(Error::ReadOnly),
             &mut Txn::ReadWrite(ref mut txn) => Ok(txn.put(
@@ -84,7 +84,7 @@ impl<'env, K: Key, V: Value<'env>> Txn<'env, K, V> {
     /// Sets the value associated with the given key if it doesn't already exist
     pub fn set_no_overwrite<V0: Into<V>>(
         &mut self,
-        bucket: &Bucket,
+        bucket: &Bucket<'env, K, V>,
         key: K,
         val: V0,
     ) -> Result<(), Error> {
@@ -101,7 +101,7 @@ impl<'env, K: Key, V: Value<'env>> Txn<'env, K, V> {
     }
 
     /// Deletes the key and value associated with `key` from the database
-    pub fn del(&mut self, bucket: &Bucket, key: K) -> Result<(), Error> {
+    pub fn del(&mut self, bucket: &Bucket<'env, K, V>, key: K) -> Result<(), Error> {
         match self {
             &mut Txn::ReadOnly(_) => Err(Error::ReadOnly),
             &mut Txn::ReadWrite(ref mut txn) => Ok(txn.del(bucket.db(), &key.as_ref(), None)?),
@@ -112,7 +112,7 @@ impl<'env, K: Key, V: Value<'env>> Txn<'env, K, V> {
     /// Reserve a buffer
     pub fn reserve(
         &'env mut self,
-        bucket: &Bucket,
+        bucket: &Bucket<'env, K, V>,
         key: K,
         len: usize,
     ) -> Result<ValueMut<'env>, Error> {
@@ -131,7 +131,7 @@ impl<'env, K: Key, V: Value<'env>> Txn<'env, K, V> {
     /// Reserve a buffer with a unique key
     pub fn reserve_no_overwrite(
         &'env mut self,
-        bucket: &Bucket,
+        bucket: &Bucket<'env, K, V>,
         key: K,
         len: usize,
     ) -> Result<ValueMut<'env>, Error> {
@@ -148,7 +148,7 @@ impl<'env, K: Key, V: Value<'env>> Txn<'env, K, V> {
     }
 
     /// Open a new readonly cursor
-    pub fn read_cursor(&'env self, bucket: &Bucket) -> Result<Cursor<'env, K, V>, Error> {
+    pub fn read_cursor(&'env self, bucket: &Bucket<'env, K, V>) -> Result<Cursor<'env, K, V>, Error> {
         match self {
             &Txn::ReadOnly(ref txn) => Ok(Cursor::read_only(txn.open_ro_cursor(bucket.db())?)),
             &Txn::ReadWrite(ref txn) => Ok(Cursor::read_only(txn.open_ro_cursor(bucket.db())?)),
@@ -157,7 +157,7 @@ impl<'env, K: Key, V: Value<'env>> Txn<'env, K, V> {
     }
 
     /// Open a new writable cursor
-    pub fn write_cursor(&'env mut self, bucket: &Bucket) -> Result<Cursor<'env, K, V>, Error> {
+    pub fn write_cursor(&'env mut self, bucket: &Bucket<'env, K, V>) -> Result<Cursor<'env, K, V>, Error> {
         match self {
             &mut Txn::ReadOnly(_) => Err(Error::ReadOnly),
             &mut Txn::ReadWrite(ref mut txn) => {

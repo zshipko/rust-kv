@@ -8,8 +8,6 @@
 // CONDITIONS OF ANY KIND, either express or implied. See the License for the
 // specific language governing permissions and limitations under the License.
 
-use lmdb;
-
 use std::collections::{
     BTreeMap,
 };
@@ -22,6 +20,8 @@ use std::path::{
     Path,
     PathBuf,
 };
+
+use std::fs;
 
 use std::sync::{
     Arc,
@@ -37,30 +37,14 @@ use store::{
     Store
 };
 
-use types::{
-    Key
-};
-
 use config::{
     Config
 };
 
-#[derive(Debug)]
-pub struct Handle {
-    env: lmdb::Environment,
-    cfg: Config,
-}
-
-impl Handle {
-    pub fn store<K: Key>(self) -> Result<Store<K>, Error> {
-        Store::wrap(self.env, self.cfg)
-    }
-}
-
 /// A process is only permitted to have one open handle to each database. This manager
 /// exists to enforce that constraint: don't open databases directly.
 pub struct Manager {
-    stores: Mutex<BTreeMap<PathBuf, Arc<RwLock<Handle>>>>,
+    stores: Mutex<BTreeMap<PathBuf, Arc<RwLock<Store>>>>,
 }
 
 impl Manager {
@@ -72,28 +56,22 @@ impl Manager {
     }
 
     /// Return the open store at `path`, returning `None` if it has not already been opened.
-    pub fn get<'p, P, T>(&self, path: P) -> Result<Option<Arc<RwLock<Handle>>>, Error>
-    where P: Into<&'p Path>,
-          T: Key
+    pub fn get<'p, P>(&self, path: P) -> Result<Option<Arc<RwLock<Store>>>, Error>
+    where P: Into<&'p Path>
     {
         let canonical = path.into().canonicalize()?;
         Ok(self.stores.lock().unwrap().get(&canonical).cloned())
     }
 
     /// Return the open store at cfg.path, or create it using the given config.
-    pub fn get_or_create<T>(&mut self, mut cfg: Config) -> Result<Arc<RwLock<Handle>>, Error>
-    where T: Key
-    {
+    pub fn open(&mut self, cfg: Config) -> Result<Arc<RwLock<Store>>, Error>{
+        let _ = fs::create_dir_all(&cfg.path);
         let canonical = cfg.path.as_path().canonicalize()?;
         let mut map = self.stores.lock().unwrap();
         Ok(match map.entry(canonical) {
             Entry::Occupied(e) => e.get().clone(),
             Entry::Vacant(e) => {
-                let env = cfg.env()?;
-                let k = Arc::new(RwLock::new(Handle{
-                    cfg: cfg,
-                    env: env
-                }));
+                let k = Arc::new(RwLock::new(Store::new(cfg)?));
                 e.insert(k).clone()
             }
         })
@@ -118,10 +96,10 @@ mod test {
         let mut manager = Manager::new();
 
         let p = root.path();
-        assert!(manager.get::<_, &str>(p).expect("success").is_none());
+        assert!(manager.get(p).expect("success").is_none());
 
-        let created_arc = manager.get_or_create::<&str>(Config::default(p)).expect("created");
-        let fetched_arc = manager.get::<_, &str>(p).expect("success").expect("existed");
+        let created_arc = manager.open(Config::default(p)).expect("created");
+        let fetched_arc = manager.get(p).expect("success").expect("existed");
         assert!(Arc::ptr_eq(&created_arc, &fetched_arc));
     }
 }
