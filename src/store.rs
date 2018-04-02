@@ -105,14 +105,14 @@ impl Store {
 
     #[inline]
     /// Open a readonly transaction
-    pub fn read_txn<'env, K: Key, V: Value<'env>>(&'env self) -> Result<Txn<'env, K, V>, Error> {
+    pub fn read_txn<'env>(&'env self) -> Result<Txn<'env>, Error> {
         let txn = self.env.begin_ro_txn()?;
         Ok(Txn::read_only(txn))
     }
 
     #[inline]
     /// Open a writable transaction
-    pub fn write_txn<'env, K: Key, V: Value<'env>>(&'env self) -> Result<Txn<'env, K, V>, Error> {
+    pub fn write_txn<'env>(&'env self) -> Result<Txn<'env>, Error> {
         if self.cfg.readonly {
             return Err(Error::ReadOnly);
         }

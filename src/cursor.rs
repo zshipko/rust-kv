@@ -4,8 +4,9 @@ use lmdb;
 use lmdb::Cursor as LMDBCursor;
 
 use types::{Key, Value};
-use txn::Hidden;
 use error::Error;
+
+pub struct Hidden<A, B>(PhantomData<A>, PhantomData<B>);
 
 /// CursorOp provides the ability to specify the position of a cursor
 pub enum CursorOp {
@@ -50,7 +51,7 @@ pub enum Cursor<'a, K, V> {
 }
 
 /// Iter wrapper
-pub struct Iter<'a, K, V>(lmdb::Iter<'a>, PhantomData<K>, PhantomData<V>);
+pub struct Iter<'a, K, V>(lmdb::Iter<'a>, Hidden<K, V>);
 
 impl<'a, K: Key, V: Value<'a>> Iterator for Iter<'a, K, V>
 where
@@ -88,8 +89,8 @@ impl<'a, K: Key, V: Value<'a>> Cursor<'a, K, V> {
     /// Iterate over all key/value pairs
     pub fn iter(&mut self) -> Iter<'a, K, V> {
         match self {
-            &mut Cursor::ReadOnly(ref mut ro) => Iter(ro.iter(), PhantomData, PhantomData),
-            &mut Cursor::ReadWrite(ref mut rw) => Iter(rw.iter(), PhantomData, PhantomData),
+            &mut Cursor::ReadOnly(ref mut ro) => Iter(ro.iter(), Hidden(PhantomData, PhantomData)),
+            &mut Cursor::ReadWrite(ref mut rw) => Iter(rw.iter(), Hidden(PhantomData, PhantomData)),
             &mut Cursor::Phantom(_) => unreachable!(),
         }
     }
@@ -99,10 +100,10 @@ impl<'a, K: Key, V: Value<'a>> Cursor<'a, K, V> {
     pub fn iter_from(&mut self, key: &'a K) -> Iter<'a, K, V> {
         match self {
             &mut Cursor::ReadOnly(ref mut ro) => {
-                Iter(ro.iter_from(key.as_ref()), PhantomData, PhantomData)
+                Iter(ro.iter_from(key.as_ref()), Hidden(PhantomData, PhantomData))
             }
             &mut Cursor::ReadWrite(ref mut rw) => {
-                Iter(rw.iter_from(key.as_ref()), PhantomData, PhantomData)
+                Iter(rw.iter_from(key.as_ref()), Hidden(PhantomData, PhantomData))
             }
             &mut Cursor::Phantom(_) => unreachable!(),
         }
