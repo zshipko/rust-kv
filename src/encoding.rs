@@ -200,3 +200,48 @@ pub mod bincode {
         }
     }
 }
+
+#[cfg(feature = "capnp-value")]
+/// Cap N Proto encoding
+pub mod capnp {
+    extern crate capnp;
+
+    use self::capnp::message::{Builder, Reader};
+
+    pub enum Proto {
+        Writer(Builder<capnp::message::HeapAllocator>),
+        Reader(Reader<capnp::serialize::OwnedSegments>)
+    }
+
+    impl From<Builder<capnp::message::HeapAllocator>> for Proto {
+        fn from(b: Builder<capnp::message::HeapAllocator>) -> Proto {
+            Proto::Writer(b)
+        }
+    }
+
+    impl From<Reader<capnp::serialize::OwnedSegments>> for Proto {
+        fn from(r: Reader<capnp::serialize::OwnedSegments>) -> Proto {
+            Proto::Reader(r)
+        }
+    }
+
+    impl ::Encoding for Proto {
+        fn encode_to<W: ::std::io::Write>(&self, w: &mut W) -> Result<(), ::Error> {
+            match self {
+                Proto::Writer(p) => Ok(capnp::serialize::write_message(w, p)?),
+                Proto::Reader(_) => Err(::Error::InvalidEncoding)
+            }
+        }
+
+        fn decode_from<R: ::std::io::Read>(r: &mut R) -> Result<Self, ::Error> {
+            let opts = capnp::message::ReaderOptions::default();
+            let msg = match capnp::serialize::read_message(r, opts) {
+                Ok(msg) => msg,
+                Err(_) => return Err(::Error::InvalidEncoding)
+            };
+
+            Ok(Proto::Reader(msg))
+        }
+    }
+}
+
