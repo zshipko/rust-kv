@@ -57,36 +57,36 @@ impl<'env> Txn<'env> {
     }
 
     /// Sets the value associated with the given key
-    pub fn set<K: Key, V: Value<'env>>(
+    pub fn set<K: Key, V: Value<'env>, X: Into<V>>(
         &mut self,
         bucket: &Bucket<'env, K, V>,
         key: K,
-        val: V,
+        val: X,
     ) -> Result<(), Error> {
         match self {
             &mut Txn::ReadOnly(_) => Err(Error::ReadOnly),
             &mut Txn::ReadWrite(ref mut txn) => Ok(txn.put(
                 bucket.db(),
-                &key.as_ref(),
-                &val,
+                &key.as_ref().as_ref(),
+                &val.into(),
                 lmdb::WriteFlags::empty(),
             )?),
         }
     }
 
     /// Sets the value associated with the given key if it doesn't already exist
-    pub fn set_no_overwrite<K: Key, V: Value<'env>>(
+    pub fn set_no_overwrite<K: Key, V: Value<'env>, X: Into<V>>(
         &mut self,
         bucket: &Bucket<'env, K, V>,
         key: K,
-        val: V,
+        val: X,
     ) -> Result<(), Error> {
         match self {
             &mut Txn::ReadOnly(_) => Err(Error::ReadOnly),
             &mut Txn::ReadWrite(ref mut txn) => Ok(txn.put(
                 bucket.db(),
                 &key.as_ref(),
-                &val,
+                &val.into(),
                 lmdb::WriteFlags::NO_OVERWRITE,
             )?),
         }

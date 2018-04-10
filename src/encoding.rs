@@ -20,7 +20,10 @@ pub trait Encoding: Sized {
     fn decode_from<R: io::Read>(r: &mut R) -> Result<Self, Error>;
 
     /// Decode from an existing value
-    fn decode<'a, V: Value<'a>>(val: &'a V) -> Result<Self, Error>;
+    fn decode<'a, V: Value<'a>>(val: &'a V) -> Result<Self, Error> {
+        let mut v = val.as_ref();
+        Self::decode_from(&mut v)
+    }
 }
 
 impl<E: Encoding> From<E> for ValueBuf<E> {
@@ -51,13 +54,6 @@ pub mod cbor {
                 Err(_) => Err(::Error::InvalidEncoding),
             }
         }
-
-        fn decode<'a, V: ::Value<'a>>(v: &'a V) -> Result<Cbor, ::Error> {
-            match serde_cbor::from_slice(v.as_ref()) {
-                Ok(x) => Ok(x),
-                Err(_) => Err(::Error::InvalidEncoding),
-            }
-        }
     }
 }
 
@@ -78,13 +74,6 @@ pub mod json {
 
         fn decode_from<R: ::std::io::Read>(r: &mut R) -> Result<Json, ::Error> {
             match serde_json::from_reader(r) {
-                Ok(x) => Ok(x),
-                Err(_) => Err(::Error::InvalidEncoding),
-            }
-        }
-
-        fn decode<'a, V: ::Value<'a>>(val: &'a V) -> Result<Json, ::Error> {
-            match serde_json::from_slice(val.as_ref()) {
                 Ok(x) => Ok(x),
                 Err(_) => Err(::Error::InvalidEncoding),
             }
@@ -205,13 +194,6 @@ pub mod bincode {
 
         fn decode_from<R: ::std::io::Read>(r: &mut R) -> Result<Data, ::Error> {
             match bincode::deserialize_from(r) {
-                Ok(x) => Ok(x),
-                Err(_) => Err(::Error::InvalidEncoding),
-            }
-        }
-
-        fn decode<'a, V: ::Value<'a>>(val: &'a V) -> Result<Data, ::Error> {
-            match bincode::deserialize(val.as_ref()) {
                 Ok(x) => Ok(x),
                 Err(_) => Err(::Error::InvalidEncoding),
             }
