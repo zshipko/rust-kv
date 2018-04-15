@@ -47,7 +47,7 @@ pub trait Serde<T>: Encoding {
 ///
 /// use serde::{Deserialize, Serialize};
 /// use kv::cbor::Cbor;
-/// use kv::{Config, Encoding, Error, Manager, SerdeEncoding, ValueBuf};
+/// use kv::{Config, Encoding, Error, Manager, Serde, ValueBuf};
 ///
 /// #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 /// struct Testing {
@@ -133,7 +133,7 @@ pub mod cbor {
 ///
 /// use serde::{Deserialize, Serialize};
 /// use kv::json::Json;
-/// use kv::{Config, Encoding, Error, Manager, SerdeEncoding, ValueBuf};
+/// use kv::{Config, Encoding, Error, Manager, Serde, ValueBuf};
 ///
 /// #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 /// struct Testing {
@@ -219,7 +219,7 @@ pub mod json {
 ///
 /// use serde::{Deserialize, Serialize};
 /// use kv::bincode::Bincode;
-/// use kv::{Config, Encoding, Error, Manager, SerdeEncoding, ValueBuf};
+/// use kv::{Config, Encoding, Error, Manager, Serde, ValueBuf};
 ///
 /// #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 /// struct Testing {
