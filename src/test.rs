@@ -4,6 +4,8 @@ use config::{Config, Flag};
 use store::Store;
 use types::Integer;
 use manager::Manager;
+#[cfg(any(feature = "bincode-values", feature = "cbor-value", feature = "json-value"))]
+use Encoding;
 
 fn reset(name: &str) -> String {
     let s = format!("./test/{}", name);
@@ -93,14 +95,12 @@ fn test_cbor_encoding() {
     // Create a new store
     let cfg = Config::default(path.clone());
     let store = Store::new(cfg).unwrap();
-    let bucket = store
-        .bucket::<&str, ValueBuf<Cbor<bool>>>(None)
-        .unwrap();
+    let bucket = store.bucket::<&str, ValueBuf<Cbor<bool>>>(None).unwrap();
     assert!(path::Path::new(path.as_str()).exists());
 
     let mut txn = store.write_txn().unwrap();
     for i in 0..2 {
-        match txn.set_no_overwrite(&bucket, "testing", Cbor::from_serde(true)) {
+        match txn.set_no_overwrite(&bucket, "testing", Cbor::from_serde(true).encode().unwrap()) {
             Ok(_) => assert_eq!(i, 0),
             Err(_) => assert_eq!(i, 1),
         }
@@ -124,14 +124,12 @@ fn test_json_encoding() {
     // Create a new store
     let cfg = Config::default(path.clone());
     let store = Store::new(cfg).unwrap();
-    let bucket = store
-        .bucket::<&str, ValueBuf<Json<bool>>>(None)
-        .unwrap();
+    let bucket = store.bucket::<&str, ValueBuf<Json<bool>>>(None).unwrap();
     assert!(path::Path::new(path.as_str()).exists());
 
     let mut txn = store.write_txn().unwrap();
     for i in 0..2 {
-        match txn.set_no_overwrite(&bucket, "testing", Json::from_serde(true)) {
+        match txn.set_no_overwrite(&bucket, "testing", Json::from_serde(true).encode().unwrap()) {
             Ok(_) => assert_eq!(i, 0),
             Err(_) => assert_eq!(i, 1),
         }
@@ -155,14 +153,16 @@ fn test_bincode_encoding() {
     // Create a new store
     let cfg = Config::default(path.clone());
     let store = Store::new(cfg).unwrap();
-    let bucket = store
-        .bucket::<&str, ValueBuf<Bincode<i32>>>(None)
-        .unwrap();
+    let bucket = store.bucket::<&str, ValueBuf<Bincode<i32>>>(None).unwrap();
     assert!(path::Path::new(path.as_str()).exists());
 
     let mut txn = store.write_txn().unwrap();
     for i in 0..2 {
-        match txn.set_no_overwrite(&bucket, "testing", Bincode::from_serde(12345)) {
+        match txn.set_no_overwrite(
+            &bucket,
+            "testing",
+            Bincode::from_serde(12345).encode().unwrap(),
+        ) {
             Ok(_) => assert_eq!(i, 0),
             Err(_) => assert_eq!(i, 1),
         }

@@ -1,4 +1,5 @@
 use std::io;
+use std::sync::PoisonError;
 
 use lmdb;
 
@@ -36,6 +37,10 @@ pub enum Error {
     /// Directory doesn't exist
     #[fail(display = "Directory doesn't exist")]
     DirectoryNotFound,
+
+    /// RwLock is poisoned
+    #[fail(display = "RwLock is poisoned")]
+    Poison,
 }
 
 impl From<lmdb::Error> for Error {
@@ -52,6 +57,12 @@ impl From<lmdb::Error> for Error {
 impl From<io::Error> for Error {
     fn from(err: io::Error) -> Error {
         Error::IO(err)
+    }
+}
+
+impl<T> From<PoisonError<T>> for Error {
+    fn from(_: PoisonError<T>) -> Error {
+        Error::Poison
     }
 }
 

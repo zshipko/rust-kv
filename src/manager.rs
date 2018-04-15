@@ -46,14 +46,14 @@ impl Manager {
         P: AsRef<Path>,
     {
         let canonical = path.as_ref().canonicalize()?;
-        Ok(self.stores.lock().unwrap().get(&canonical).cloned())
+        Ok(self.stores.lock()?.get(&canonical).cloned())
     }
 
     /// Return the open store at cfg.path, or create it using the given config.
     pub fn open(&mut self, cfg: Config) -> Result<Handle, Error> {
         let _ = fs::create_dir_all(&cfg.path);
         let canonical = cfg.path.as_path().canonicalize()?;
-        let mut map = self.stores.lock().unwrap();
+        let mut map = self.stores.lock()?;
         Ok(match map.entry(canonical) {
             Entry::Occupied(e) => e.get().clone(),
             Entry::Vacant(e) => {

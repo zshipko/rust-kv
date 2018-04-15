@@ -35,12 +35,6 @@ pub trait Serde<T>: Encoding {
     fn to_serde(self) -> T;
 }
 
-impl<E: Encoding> From<E> for ValueBuf<E> {
-    fn from(x: E) -> ::ValueBuf<E> {
-        ::Encoding::encode(&x).unwrap()
-    }
-}
-
 #[cfg(feature = "cbor-value")]
 /// The cbor encoding allows for any {de|se}rializable type to be read/written to the database
 /// using a ValueBuf, for example:
@@ -53,7 +47,7 @@ impl<E: Encoding> From<E> for ValueBuf<E> {
 ///
 /// use serde::{Deserialize, Serialize};
 /// use kv::cbor::Cbor;
-/// use kv::{Manager, Config, ValueBuf, Serde};
+/// use kv::{Config, Encoding, Error, Manager, Serde, ValueBuf};
 ///
 /// #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 /// struct Testing {
@@ -61,22 +55,31 @@ impl<E: Encoding> From<E> for ValueBuf<E> {
 ///     b: String
 /// }
 ///
-/// fn main() {
+/// fn run() -> Result<(), Error> {
 ///     let mut mgr = Manager::new();
 ///     let mut cfg = Config::default("/tmp/rust-kv");
-///     let handle = mgr.open(cfg).unwrap();
-///     let store = handle.write().unwrap();
-///     let bucket = store.bucket::<&str, ValueBuf<Cbor<Testing>>>(None).unwrap();
-///     let mut txn = store.write_txn().unwrap();
+///     let handle = mgr.open(cfg)?;
+///     let store = handle.write()?;
+///     let bucket = store.bucket::<&str, ValueBuf<Cbor<Testing>>>(None)?;
+///     let mut txn = store.write_txn()?;
 ///     let t = Testing{a: 123, b: "abc".to_owned()};
-///     txn.set(&bucket, "testing", Cbor::from_serde(t)).unwrap();
-///     txn.commit().unwrap();
+///     txn.set(
+///         &bucket,
+///         "testing",
+///         Cbor::from_serde(t).encode()?,
+///     )?;
+///     txn.commit()?;
 ///
-///     let txn = store.read_txn().unwrap();
-///     let buf = txn.get(&bucket, "testing").unwrap();
-///     let v = buf.inner().unwrap();
+///     let txn = store.read_txn()?;
+///     let buf = txn.get(&bucket, "testing")?;
+///     let v = buf.inner()?;
 ///     println!("{:?}", v.to_serde());
+///     Ok(())
 /// }
+/// #
+/// # fn main() {
+/// #     run().unwrap();
+/// # }
 /// ```
 pub mod cbor {
     extern crate serde_cbor;
@@ -113,9 +116,7 @@ pub mod cbor {
         }
 
         fn decode_from<R: Read>(r: &mut R) -> Result<Self, Error> {
-            from_reader(r)
-                .map(Cbor)
-                .map_err(|_| Error::InvalidEncoding)
+            from_reader(r).map(Cbor).map_err(|_| Error::InvalidEncoding)
         }
     }
 }
@@ -132,7 +133,7 @@ pub mod cbor {
 ///
 /// use serde::{Deserialize, Serialize};
 /// use kv::json::Json;
-/// use kv::{Manager, Config, ValueBuf, Serde};
+/// use kv::{Config, Encoding, Error, Manager, Serde, ValueBuf};
 ///
 /// #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 /// struct Testing {
@@ -140,22 +141,31 @@ pub mod cbor {
 ///     b: String
 /// }
 ///
-/// fn main() {
+/// fn run() -> Result<(), Error> {
 ///     let mut mgr = Manager::new();
 ///     let mut cfg = Config::default("/tmp/rust-kv");
-///     let handle = mgr.open(cfg).unwrap();
-///     let store = handle.write().unwrap();
-///     let bucket = store.bucket::<&str, ValueBuf<Json<Testing>>>(None).unwrap();
-///     let mut txn = store.write_txn().unwrap();
+///     let handle = mgr.open(cfg)?;
+///     let store = handle.write()?;
+///     let bucket = store.bucket::<&str, ValueBuf<Json<Testing>>>(None)?;
+///     let mut txn = store.write_txn()?;
 ///     let t = Testing{a: 123, b: "abc".to_owned()};
-///     txn.set(&bucket, "testing", Json::from_serde(t)).unwrap();
-///     txn.commit().unwrap();
+///     txn.set(
+///         &bucket,
+///         "testing",
+///         Json::from_serde(t).encode()?,
+///     )?;
+///     txn.commit()?;
 ///
-///     let txn = store.read_txn().unwrap();
-///     let buf = txn.get(&bucket, "testing").unwrap();
-///     let v = buf.inner().unwrap();
+///     let txn = store.read_txn()?;
+///     let buf = txn.get(&bucket, "testing")?;
+///     let v = buf.inner()?;
 ///     println!("{:?}", v.to_serde());
+///     Ok(())
 /// }
+/// #
+/// # fn main() {
+/// #     run().unwrap();
+/// # }
 /// ```
 pub mod json {
     extern crate serde_json;
@@ -192,9 +202,7 @@ pub mod json {
         }
 
         fn decode_from<R: Read>(r: &mut R) -> Result<Self, Error> {
-            from_reader(r)
-                .map(Json)
-                .map_err(|_| Error::InvalidEncoding)
+            from_reader(r).map(Json).map_err(|_| Error::InvalidEncoding)
         }
     }
 }
@@ -211,7 +219,7 @@ pub mod json {
 ///
 /// use serde::{Deserialize, Serialize};
 /// use kv::bincode::Bincode;
-/// use kv::{Manager, Config, ValueBuf, Serde};
+/// use kv::{Config, Encoding, Error, Manager, Serde, ValueBuf};
 ///
 /// #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 /// struct Testing {
@@ -219,22 +227,31 @@ pub mod json {
 ///     b: String
 /// }
 ///
-/// fn main() {
+/// fn run() -> Result<(), Error> {
 ///     let mut mgr = Manager::new();
 ///     let mut cfg = Config::default("/tmp/rust-kv");
-///     let handle = mgr.open(cfg).unwrap();
-///     let store = handle.write().unwrap();
-///     let bucket = store.bucket::<&str, ValueBuf<Bincode<Testing>>>(None).unwrap();
-///     let mut txn = store.write_txn().unwrap();
+///     let handle = mgr.open(cfg)?;
+///     let store = handle.write()?;
+///     let bucket = store.bucket::<&str, ValueBuf<Bincode<Testing>>>(None)?;
+///     let mut txn = store.write_txn()?;
 ///     let t = Testing{a: 123, b: "abc".to_owned()};
-///     txn.set(&bucket, "testing", Bincode::from_serde(t)).unwrap();
-///     txn.commit().unwrap();
+///     txn.set(
+///         &bucket,
+///         "testing",
+///         Bincode::from_serde(t).encode()?,
+///     )?;
+///     txn.commit()?;
 ///
-///     let txn = store.read_txn().unwrap();
-///     let buf = txn.get(&bucket, "testing").unwrap();
-///     let v = buf.inner().unwrap();
+///     let txn = store.read_txn()?;
+///     let buf = txn.get(&bucket, "testing")?;
+///     let v = buf.inner()?;
 ///     println!("{:?}", v.to_serde());
+///     Ok(())
 /// }
+/// #
+/// # fn main() {
+/// #     run().unwrap();
+/// # }
 /// ```
 pub mod bincode {
     extern crate bincode;
