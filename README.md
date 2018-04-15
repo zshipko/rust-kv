@@ -21,7 +21,7 @@ An embedded key/value store for Rust built on [LMDB](https://github.com/LMDB/lmd
 * `capnp-value`
     - Cap'n Proto value encoding using `capnp`
 
-Some examples of implementing your own encodings using serde see: [github.com/asonix/kv-testing](https://github.com/asonix/kv-testing)
+Some examples of implementing your own encodings using serde can be found [here](https://github.com/asonix/kv-testing)
 
 ## Documentation
 
