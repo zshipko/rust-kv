@@ -1,6 +1,6 @@
 use std::{fs, path};
 
-use config::{Flag, Config};
+use config::{Config, Flag};
 use store::Store;
 use types::Integer;
 use manager::Manager;
@@ -85,85 +85,93 @@ fn test_cursor() {
 #[cfg(feature = "cbor-value")]
 #[test]
 fn test_cbor_encoding() {
-    use cbor::Cbor;
+    use encoding::SerdeEncoding;
+    use cbor::CborEncoding;
     use buf::ValueBuf;
     let path = reset("cbor");
 
     // Create a new store
     let cfg = Config::default(path.clone());
     let store = Store::new(cfg).unwrap();
-    let bucket = store.bucket::<&str, ValueBuf<Cbor>>(None).unwrap();
+    let bucket = store
+        .bucket::<&str, ValueBuf<CborEncoding<bool>>>(None)
+        .unwrap();
     assert!(path::Path::new(path.as_str()).exists());
 
     let mut txn = store.write_txn().unwrap();
     for i in 0..2 {
-        match txn.set_no_overwrite(&bucket, "testing", Cbor::from(true)) {
+        match txn.set_no_overwrite(&bucket, "testing", CborEncoding::from_serde(true)) {
             Ok(_) => assert_eq!(i, 0),
-            Err(_) => assert_eq!(i, 1)
+            Err(_) => assert_eq!(i, 1),
         }
     }
     txn.commit().unwrap();
 
     let txn = store.read_txn().unwrap();
     let v = txn.get(&bucket, "testing").unwrap().inner().unwrap();
-    assert_eq!(v.as_boolean().unwrap(), true);
+    assert_eq!(v.to_serde(), true);
     txn.abort();
 }
 
 #[cfg(feature = "json-value")]
 #[test]
 fn test_json_encoding() {
-    use json::Json;
+    use encoding::SerdeEncoding;
+    use json::JsonEncoding;
     use buf::ValueBuf;
     let path = reset("json");
 
     // Create a new store
     let cfg = Config::default(path.clone());
     let store = Store::new(cfg).unwrap();
-    let bucket = store.bucket::<&str, ValueBuf<Json>>(None).unwrap();
+    let bucket = store
+        .bucket::<&str, ValueBuf<JsonEncoding<bool>>>(None)
+        .unwrap();
     assert!(path::Path::new(path.as_str()).exists());
 
     let mut txn = store.write_txn().unwrap();
     for i in 0..2 {
-        match txn.set_no_overwrite(&bucket, "testing", Json::from(true)) {
+        match txn.set_no_overwrite(&bucket, "testing", JsonEncoding::from_serde(true)) {
             Ok(_) => assert_eq!(i, 0),
-            Err(_) => assert_eq!(i, 1)
+            Err(_) => assert_eq!(i, 1),
         }
     }
     txn.commit().unwrap();
 
     let txn = store.read_txn().unwrap();
     let v = txn.get(&bucket, "testing").unwrap().inner().unwrap();
-    assert_eq!(v.as_bool().unwrap(), true);
+    assert_eq!(v.to_serde(), true);
     txn.abort();
 }
-
 
 #[cfg(feature = "bincode-value")]
 #[test]
 fn test_bincode_encoding() {
-    use bincode::Data;
+    use encoding::SerdeEncoding;
+    use bincode::BincodeEncoding;
     use buf::ValueBuf;
     let path = reset("bincode");
 
     // Create a new store
     let cfg = Config::default(path.clone());
     let store = Store::new(cfg).unwrap();
-    let bucket = store.bucket::<&str, ValueBuf<Data>>(None).unwrap();
+    let bucket = store
+        .bucket::<&str, ValueBuf<BincodeEncoding<i32>>>(None)
+        .unwrap();
     assert!(path::Path::new(path.as_str()).exists());
 
     let mut txn = store.write_txn().unwrap();
     for i in 0..2 {
-        match txn.set_no_overwrite(&bucket, "testing", Data::from(12345)) {
+        match txn.set_no_overwrite(&bucket, "testing", BincodeEncoding::from_serde(12345)) {
             Ok(_) => assert_eq!(i, 0),
-            Err(_) => assert_eq!(i, 1)
+            Err(_) => assert_eq!(i, 1),
         }
     }
     txn.commit().unwrap();
 
     let txn = store.read_txn().unwrap();
     let v = txn.get(&bucket, "testing").unwrap().inner().unwrap();
-    assert_eq!(v, Data::from(12345));
+    assert_eq!(v.to_serde(), 12345);
     txn.abort();
 }
 

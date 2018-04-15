@@ -2,7 +2,7 @@ use std::marker::PhantomData;
 
 use lmdb;
 
-use config::{DatabaseFlags, Config};
+use config::{Config, DatabaseFlags};
 use error::Error;
 use txn::Txn;
 use std::collections::HashMap;
@@ -49,9 +49,7 @@ impl Store {
                 Some(bucket_name.clone())
             };
 
-            store
-                .buckets
-                .insert(name, flag.database_flags());
+            store.buckets.insert(name, flag.database_flags());
         }
 
         if !initialized_default {

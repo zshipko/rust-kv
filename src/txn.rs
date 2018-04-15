@@ -49,7 +49,11 @@ impl<'env> Txn<'env> {
     }
 
     /// Gets the value associated with the given key
-    pub fn get<K: Key, V: Value<'env>>(&'env self, bucket: &Bucket<'env, K, V>, key: K) -> Result<V, Error> {
+    pub fn get<K: Key, V: Value<'env>>(
+        &'env self,
+        bucket: &Bucket<'env, K, V>,
+        key: K,
+    ) -> Result<V, Error> {
         match self {
             &Txn::ReadOnly(ref txn) => Ok(V::from_raw(txn.get(bucket.db(), &key.as_ref())?)),
             &Txn::ReadWrite(ref txn) => Ok(V::from_raw(txn.get(bucket.db(), &key.as_ref())?)),
@@ -93,7 +97,11 @@ impl<'env> Txn<'env> {
     }
 
     /// Deletes the key and value associated with `key` from the database
-    pub fn del<K: Key, V: Value<'env>>(&mut self, bucket: &Bucket<'env, K, V>, key: K) -> Result<(), Error> {
+    pub fn del<K: Key, V: Value<'env>>(
+        &mut self,
+        bucket: &Bucket<'env, K, V>,
+        key: K,
+    ) -> Result<(), Error> {
         match self {
             &mut Txn::ReadOnly(_) => Err(Error::ReadOnly),
             &mut Txn::ReadWrite(ref mut txn) => Ok(txn.del(bucket.db(), &key.as_ref(), None)?),

@@ -28,8 +28,10 @@ pub trait Encoding: Sized {
 
 /// A trait for types wrapping Serde values
 pub trait SerdeEncoding<T>: Encoding {
+    /// Wraps a serde-compatible type in a `SerdeEncoding`
     fn from_serde(t: T) -> Self;
 
+    /// Unwraps a serde-compatible type from a `SerdeEncoding`
     fn to_serde(self) -> T;
 }
 
@@ -40,7 +42,42 @@ impl<E: Encoding> From<E> for ValueBuf<E> {
 }
 
 #[cfg(feature = "cbor-value")]
-/// CBOR encoding
+/// The cbor encoding allows for any {de|se}rializable type to be read/written to the database
+/// using a ValueBuf, for example:
+///
+/// ```rust
+/// extern crate kv;
+/// extern crate serde;
+/// #[macro_use]
+/// extern crate serde_derive;
+///
+/// use serde::{Deserialize, Serialize};
+/// use kv::cbor::CborEncoding;
+/// use kv::{Manager, Config, ValueBuf, SerdeEncoding};
+///
+/// #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+/// struct Testing {
+///     a: i32,
+///     b: String
+/// }
+///
+/// fn main() {
+///     let mut mgr = Manager::new();
+///     let mut cfg = Config::default("/tmp/rust-kv");
+///     let handle = mgr.open(cfg).unwrap();
+///     let store = handle.write().unwrap();
+///     let bucket = store.bucket::<&str, ValueBuf<CborEncoding<Testing>>>(None).unwrap();
+///     let mut txn = store.write_txn().unwrap();
+///     let t = Testing{a: 123, b: "abc".to_owned()};
+///     txn.set(&bucket, "testing", CborEncoding::from_serde(t)).unwrap();
+///     txn.commit().unwrap();
+///
+///     let txn = store.read_txn().unwrap();
+///     let buf = txn.get(&bucket, "testing").unwrap();
+///     let v = buf.inner().unwrap();
+///     println!("{:?}", v.to_serde());
+/// }
+/// ```
 pub mod cbor {
     extern crate serde_cbor;
 
@@ -84,7 +121,42 @@ pub mod cbor {
 }
 
 #[cfg(feature = "json-value")]
-/// JSON encoding
+/// The json encoding allows for any {de|se}rializable type to be read/written to the database
+/// using a ValueBuf, for example:
+///
+/// ```rust
+/// extern crate kv;
+/// extern crate serde;
+/// #[macro_use]
+/// extern crate serde_derive;
+///
+/// use serde::{Deserialize, Serialize};
+/// use kv::json::JsonEncoding;
+/// use kv::{Manager, Config, ValueBuf, SerdeEncoding};
+///
+/// #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+/// struct Testing {
+///     a: i32,
+///     b: String
+/// }
+///
+/// fn main() {
+///     let mut mgr = Manager::new();
+///     let mut cfg = Config::default("/tmp/rust-kv");
+///     let handle = mgr.open(cfg).unwrap();
+///     let store = handle.write().unwrap();
+///     let bucket = store.bucket::<&str, ValueBuf<JsonEncoding<Testing>>>(None).unwrap();
+///     let mut txn = store.write_txn().unwrap();
+///     let t = Testing{a: 123, b: "abc".to_owned()};
+///     txn.set(&bucket, "testing", JsonEncoding::from_serde(t)).unwrap();
+///     txn.commit().unwrap();
+///
+///     let txn = store.read_txn().unwrap();
+///     let buf = txn.get(&bucket, "testing").unwrap();
+///     let v = buf.inner().unwrap();
+///     println!("{:?}", v.to_serde());
+/// }
+/// ```
 pub mod json {
     extern crate serde_json;
 
@@ -128,7 +200,42 @@ pub mod json {
 }
 
 #[cfg(feature = "bincode-value")]
-/// Bincode encoding
+/// The bincode encoding allows for any {de|se}rializable type to be read/written to the database
+/// using a ValueBuf, for example:
+///
+/// ```rust
+/// extern crate kv;
+/// extern crate serde;
+/// #[macro_use]
+/// extern crate serde_derive;
+///
+/// use serde::{Deserialize, Serialize};
+/// use kv::bincode::BincodeEncoding;
+/// use kv::{Manager, Config, ValueBuf, SerdeEncoding};
+///
+/// #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+/// struct Testing {
+///     a: i32,
+///     b: String
+/// }
+///
+/// fn main() {
+///     let mut mgr = Manager::new();
+///     let mut cfg = Config::default("/tmp/rust-kv");
+///     let handle = mgr.open(cfg).unwrap();
+///     let store = handle.write().unwrap();
+///     let bucket = store.bucket::<&str, ValueBuf<BincodeEncoding<Testing>>>(None).unwrap();
+///     let mut txn = store.write_txn().unwrap();
+///     let t = Testing{a: 123, b: "abc".to_owned()};
+///     txn.set(&bucket, "testing", BincodeEncoding::from_serde(t)).unwrap();
+///     txn.commit().unwrap();
+///
+///     let txn = store.read_txn().unwrap();
+///     let buf = txn.get(&bucket, "testing").unwrap();
+///     let v = buf.inner().unwrap();
+///     println!("{:?}", v.to_serde());
+/// }
+/// ```
 pub mod bincode {
     extern crate bincode;
 
