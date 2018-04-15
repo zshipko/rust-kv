@@ -52,7 +52,7 @@ impl<E: Encoding> From<E> for ValueBuf<E> {
 /// extern crate serde_derive;
 ///
 /// use serde::{Deserialize, Serialize};
-/// use kv::cbor::CborEncoding;
+/// use kv::cbor::Cbor;
 /// use kv::{Manager, Config, ValueBuf, SerdeEncoding};
 ///
 /// #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -66,10 +66,10 @@ impl<E: Encoding> From<E> for ValueBuf<E> {
 ///     let mut cfg = Config::default("/tmp/rust-kv");
 ///     let handle = mgr.open(cfg).unwrap();
 ///     let store = handle.write().unwrap();
-///     let bucket = store.bucket::<&str, ValueBuf<CborEncoding<Testing>>>(None).unwrap();
+///     let bucket = store.bucket::<&str, ValueBuf<Cbor<Testing>>>(None).unwrap();
 ///     let mut txn = store.write_txn().unwrap();
 ///     let t = Testing{a: 123, b: "abc".to_owned()};
-///     txn.set(&bucket, "testing", CborEncoding::from_serde(t)).unwrap();
+///     txn.set(&bucket, "testing", Cbor::from_serde(t)).unwrap();
 ///     txn.commit().unwrap();
 ///
 ///     let txn = store.read_txn().unwrap();
@@ -89,14 +89,14 @@ pub mod cbor {
 
     /// An opaque type for CBOR encoding that wraps a Serde-compatible type T.
     #[derive(Debug, Deserialize, Serialize)]
-    pub struct CborEncoding<T>(T);
+    pub struct Cbor<T>(T);
 
-    impl<T> SerdeEncoding<T> for CborEncoding<T>
+    impl<T> SerdeEncoding<T> for Cbor<T>
     where
         T: DeserializeOwned + Serialize,
     {
         fn from_serde(t: T) -> Self {
-            CborEncoding(t)
+            Cbor(t)
         }
 
         fn to_serde(self) -> T {
@@ -104,7 +104,7 @@ pub mod cbor {
         }
     }
 
-    impl<T> Encoding for CborEncoding<T>
+    impl<T> Encoding for Cbor<T>
     where
         T: DeserializeOwned + Serialize,
     {
@@ -114,7 +114,7 @@ pub mod cbor {
 
         fn decode_from<R: Read>(r: &mut R) -> Result<Self, Error> {
             from_reader(r)
-                .map(CborEncoding)
+                .map(Cbor)
                 .map_err(|_| Error::InvalidEncoding)
         }
     }
@@ -131,7 +131,7 @@ pub mod cbor {
 /// extern crate serde_derive;
 ///
 /// use serde::{Deserialize, Serialize};
-/// use kv::json::JsonEncoding;
+/// use kv::json::Json;
 /// use kv::{Manager, Config, ValueBuf, SerdeEncoding};
 ///
 /// #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -145,10 +145,10 @@ pub mod cbor {
 ///     let mut cfg = Config::default("/tmp/rust-kv");
 ///     let handle = mgr.open(cfg).unwrap();
 ///     let store = handle.write().unwrap();
-///     let bucket = store.bucket::<&str, ValueBuf<JsonEncoding<Testing>>>(None).unwrap();
+///     let bucket = store.bucket::<&str, ValueBuf<Json<Testing>>>(None).unwrap();
 ///     let mut txn = store.write_txn().unwrap();
 ///     let t = Testing{a: 123, b: "abc".to_owned()};
-///     txn.set(&bucket, "testing", JsonEncoding::from_serde(t)).unwrap();
+///     txn.set(&bucket, "testing", Json::from_serde(t)).unwrap();
 ///     txn.commit().unwrap();
 ///
 ///     let txn = store.read_txn().unwrap();
@@ -168,14 +168,14 @@ pub mod json {
 
     /// An opaque type for JSON encoding that wraps a Serde-compatible type T.
     #[derive(Debug, Deserialize, Serialize)]
-    pub struct JsonEncoding<T>(T);
+    pub struct Json<T>(T);
 
-    impl<T> SerdeEncoding<T> for JsonEncoding<T>
+    impl<T> SerdeEncoding<T> for Json<T>
     where
         T: DeserializeOwned + Serialize,
     {
         fn from_serde(t: T) -> Self {
-            JsonEncoding(t)
+            Json(t)
         }
 
         fn to_serde(self) -> T {
@@ -183,7 +183,7 @@ pub mod json {
         }
     }
 
-    impl<T> Encoding for JsonEncoding<T>
+    impl<T> Encoding for Json<T>
     where
         T: DeserializeOwned + Serialize,
     {
@@ -193,7 +193,7 @@ pub mod json {
 
         fn decode_from<R: Read>(r: &mut R) -> Result<Self, Error> {
             from_reader(r)
-                .map(JsonEncoding)
+                .map(Json)
                 .map_err(|_| Error::InvalidEncoding)
         }
     }
@@ -210,7 +210,7 @@ pub mod json {
 /// extern crate serde_derive;
 ///
 /// use serde::{Deserialize, Serialize};
-/// use kv::bincode::BincodeEncoding;
+/// use kv::bincode::Bincode;
 /// use kv::{Manager, Config, ValueBuf, SerdeEncoding};
 ///
 /// #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -224,10 +224,10 @@ pub mod json {
 ///     let mut cfg = Config::default("/tmp/rust-kv");
 ///     let handle = mgr.open(cfg).unwrap();
 ///     let store = handle.write().unwrap();
-///     let bucket = store.bucket::<&str, ValueBuf<BincodeEncoding<Testing>>>(None).unwrap();
+///     let bucket = store.bucket::<&str, ValueBuf<Bincode<Testing>>>(None).unwrap();
 ///     let mut txn = store.write_txn().unwrap();
 ///     let t = Testing{a: 123, b: "abc".to_owned()};
-///     txn.set(&bucket, "testing", BincodeEncoding::from_serde(t)).unwrap();
+///     txn.set(&bucket, "testing", Bincode::from_serde(t)).unwrap();
 ///     txn.commit().unwrap();
 ///
 ///     let txn = store.read_txn().unwrap();
@@ -247,14 +247,14 @@ pub mod bincode {
 
     /// An opaque type for Bincode encoding that wraps a Serde-compatible type T.
     #[derive(Debug, Deserialize, Serialize)]
-    pub struct BincodeEncoding<T>(T);
+    pub struct Bincode<T>(T);
 
-    impl<T> SerdeEncoding<T> for BincodeEncoding<T>
+    impl<T> SerdeEncoding<T> for Bincode<T>
     where
         T: DeserializeOwned + Serialize,
     {
         fn from_serde(t: T) -> Self {
-            BincodeEncoding(t)
+            Bincode(t)
         }
 
         fn to_serde(self) -> T {
@@ -262,7 +262,7 @@ pub mod bincode {
         }
     }
 
-    impl<T> Encoding for BincodeEncoding<T>
+    impl<T> Encoding for Bincode<T>
     where
         T: DeserializeOwned + Serialize,
     {
@@ -272,7 +272,7 @@ pub mod bincode {
 
         fn decode_from<R: Read>(r: &mut R) -> Result<Self, Error> {
             deserialize_from(r)
-                .map(BincodeEncoding)
+                .map(Bincode)
                 .map_err(|_| Error::InvalidEncoding)
         }
     }

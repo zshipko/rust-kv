@@ -86,7 +86,7 @@ fn test_cursor() {
 #[test]
 fn test_cbor_encoding() {
     use encoding::SerdeEncoding;
-    use cbor::CborEncoding;
+    use cbor::Cbor;
     use buf::ValueBuf;
     let path = reset("cbor");
 
@@ -94,13 +94,13 @@ fn test_cbor_encoding() {
     let cfg = Config::default(path.clone());
     let store = Store::new(cfg).unwrap();
     let bucket = store
-        .bucket::<&str, ValueBuf<CborEncoding<bool>>>(None)
+        .bucket::<&str, ValueBuf<Cbor<bool>>>(None)
         .unwrap();
     assert!(path::Path::new(path.as_str()).exists());
 
     let mut txn = store.write_txn().unwrap();
     for i in 0..2 {
-        match txn.set_no_overwrite(&bucket, "testing", CborEncoding::from_serde(true)) {
+        match txn.set_no_overwrite(&bucket, "testing", Cbor::from_serde(true)) {
             Ok(_) => assert_eq!(i, 0),
             Err(_) => assert_eq!(i, 1),
         }
@@ -117,7 +117,7 @@ fn test_cbor_encoding() {
 #[test]
 fn test_json_encoding() {
     use encoding::SerdeEncoding;
-    use json::JsonEncoding;
+    use json::Json;
     use buf::ValueBuf;
     let path = reset("json");
 
@@ -125,13 +125,13 @@ fn test_json_encoding() {
     let cfg = Config::default(path.clone());
     let store = Store::new(cfg).unwrap();
     let bucket = store
-        .bucket::<&str, ValueBuf<JsonEncoding<bool>>>(None)
+        .bucket::<&str, ValueBuf<Json<bool>>>(None)
         .unwrap();
     assert!(path::Path::new(path.as_str()).exists());
 
     let mut txn = store.write_txn().unwrap();
     for i in 0..2 {
-        match txn.set_no_overwrite(&bucket, "testing", JsonEncoding::from_serde(true)) {
+        match txn.set_no_overwrite(&bucket, "testing", Json::from_serde(true)) {
             Ok(_) => assert_eq!(i, 0),
             Err(_) => assert_eq!(i, 1),
         }
@@ -148,7 +148,7 @@ fn test_json_encoding() {
 #[test]
 fn test_bincode_encoding() {
     use encoding::SerdeEncoding;
-    use bincode::BincodeEncoding;
+    use bincode::Bincode;
     use buf::ValueBuf;
     let path = reset("bincode");
 
@@ -156,13 +156,13 @@ fn test_bincode_encoding() {
     let cfg = Config::default(path.clone());
     let store = Store::new(cfg).unwrap();
     let bucket = store
-        .bucket::<&str, ValueBuf<BincodeEncoding<i32>>>(None)
+        .bucket::<&str, ValueBuf<Bincode<i32>>>(None)
         .unwrap();
     assert!(path::Path::new(path.as_str()).exists());
 
     let mut txn = store.write_txn().unwrap();
     for i in 0..2 {
-        match txn.set_no_overwrite(&bucket, "testing", BincodeEncoding::from_serde(12345)) {
+        match txn.set_no_overwrite(&bucket, "testing", Bincode::from_serde(12345)) {
             Ok(_) => assert_eq!(i, 0),
             Err(_) => assert_eq!(i, 1),
         }
