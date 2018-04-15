@@ -2,31 +2,39 @@ use std::io;
 
 use lmdb;
 
-#[derive(Debug)]
+#[derive(Debug, Fail)]
 /// Error type
 pub enum Error {
     /// An LMDB error
-    LMDB(lmdb::Error),
+    #[fail(display = "Error in LMDB: {}", _0)]
+    LMDB(#[cause] lmdb::Error),
 
     /// An IO error
-    IO(io::Error),
+    #[fail(display = "IO error: {}", _0)]
+    IO(#[cause] io::Error),
 
     /// A non-existant or invalid bucket was used
+    #[fail(display = "Requested bucket doesn't exist")]
     InvalidBucket,
 
     /// A resource could not be found
+    #[fail(display = "Requested key doesn't exist")]
     NotFound,
 
     /// A transaction is readonly but something tried to write to it
+    #[fail(display = "Cannot write in a ReadOnly transaction")]
     ReadOnly,
 
     /// An encoding error
+    #[fail(display = "Could not encode or decode value")]
     InvalidEncoding,
 
     /// Configuration is invalid
+    #[fail(display = "Configuration is invalid")]
     InvalidConfiguration,
 
     /// Directory doesn't exist
+    #[fail(display = "Directory doesn't exist")]
     DirectoryNotFound,
 }
 

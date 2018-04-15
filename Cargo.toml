@@ -10,14 +10,15 @@ description = "An embedded key/value store for Rust"
 readme = "README.md"
 
 [dependencies]
-lmdb = { version = "0.8" }
-serde = { version = "1" }
-serde_derive = { version = "1" }
-toml = { version = "0.4" }
-serde_cbor = { version = "0.8", optional = true }
-serde_json = { version = "1", optional = true }
-bincode = { version = "1", optional = true }
+failure = "0.1"
+lmdb = "0.8"
+serde = "1.0"
+serde_derive = "1.0"
+toml = "0.4"
+bincode = { version = "1.0", optional = true }
 capnp = { version = "0.8", optional = true }
+serde_cbor = { version = "0.8", optional = true }
+serde_json = { version = "1.0", optional = true }
 
 [features]
 default = []

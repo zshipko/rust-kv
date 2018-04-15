@@ -2,6 +2,8 @@
 
 //! `kv` is a simple way to embed a key/value store in any application written in Rust
 
+#[macro_use]
+extern crate failure;
 extern crate lmdb;
 extern crate serde;
 #[macro_use]
