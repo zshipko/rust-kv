@@ -26,6 +26,15 @@ pub trait Encoding: Sized {
     }
 }
 
+/// A trait for types wrapping Serde values
+pub trait SerdeEncoding<T>: Encoding {
+    /// Wraps a serde-compatible type in a `SerdeEncoding`
+    fn from_serde(t: T) -> Self;
+
+    /// Unwraps a serde-compatible type from a `SerdeEncoding`
+    fn to_serde(self) -> T;
+}
+
 impl<E: Encoding> From<E> for ValueBuf<E> {
     fn from(x: E) -> ::ValueBuf<E> {
         ::Encoding::encode(&x).unwrap()
@@ -33,170 +42,238 @@ impl<E: Encoding> From<E> for ValueBuf<E> {
 }
 
 #[cfg(feature = "cbor-value")]
-/// CBOR encoding
+/// The cbor encoding allows for any {de|se}rializable type to be read/written to the database
+/// using a ValueBuf, for example:
+///
+/// ```rust
+/// extern crate kv;
+/// extern crate serde;
+/// #[macro_use]
+/// extern crate serde_derive;
+///
+/// use serde::{Deserialize, Serialize};
+/// use kv::cbor::CborEncoding;
+/// use kv::{Manager, Config, ValueBuf, SerdeEncoding};
+///
+/// #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+/// struct Testing {
+///     a: i32,
+///     b: String
+/// }
+///
+/// fn main() {
+///     let mut mgr = Manager::new();
+///     let mut cfg = Config::default("/tmp/rust-kv");
+///     let handle = mgr.open(cfg).unwrap();
+///     let store = handle.write().unwrap();
+///     let bucket = store.bucket::<&str, ValueBuf<CborEncoding<Testing>>>(None).unwrap();
+///     let mut txn = store.write_txn().unwrap();
+///     let t = Testing{a: 123, b: "abc".to_owned()};
+///     txn.set(&bucket, "testing", CborEncoding::from_serde(t)).unwrap();
+///     txn.commit().unwrap();
+///
+///     let txn = store.read_txn().unwrap();
+///     let buf = txn.get(&bucket, "testing").unwrap();
+///     let v = buf.inner().unwrap();
+///     println!("{:?}", v.to_serde());
+/// }
+/// ```
 pub mod cbor {
     extern crate serde_cbor;
 
-    /// CBOR datatype
-    pub use self::serde_cbor::Value as Cbor;
+    use std::io::{Read, Write};
 
-    impl ::Encoding for Cbor {
-        fn encode_to<W: ::std::io::Write>(&self, w: &mut W) -> Result<(), ::Error> {
-            match serde_cbor::to_writer(w, self) {
-                Ok(()) => Ok(()),
-                Err(_) => Err(::Error::InvalidEncoding),
-            }
+    use self::serde_cbor::{from_reader, to_writer};
+    use serde::{de::DeserializeOwned, ser::Serialize};
+    use super::{Encoding, Error, SerdeEncoding};
+
+    /// An opaque type for CBOR encoding that wraps a Serde-compatible type T.
+    #[derive(Debug, Deserialize, Serialize)]
+    pub struct CborEncoding<T>(T);
+
+    impl<T> SerdeEncoding<T> for CborEncoding<T>
+    where
+        T: DeserializeOwned + Serialize,
+    {
+        fn from_serde(t: T) -> Self {
+            CborEncoding(t)
         }
 
-        fn decode_from<R: ::std::io::Read>(r: &mut R) -> Result<Cbor, ::Error> {
-            match serde_cbor::from_reader(r) {
-                Ok(x) => Ok(x),
-                Err(_) => Err(::Error::InvalidEncoding),
-            }
+        fn to_serde(self) -> T {
+            self.0
+        }
+    }
+
+    impl<T> Encoding for CborEncoding<T>
+    where
+        T: DeserializeOwned + Serialize,
+    {
+        fn encode_to<W: Write>(&self, w: &mut W) -> Result<(), Error> {
+            to_writer(w, &self.0).map_err(|_| Error::InvalidEncoding)
+        }
+
+        fn decode_from<R: Read>(r: &mut R) -> Result<Self, Error> {
+            from_reader(r)
+                .map(CborEncoding)
+                .map_err(|_| Error::InvalidEncoding)
         }
     }
 }
 
 #[cfg(feature = "json-value")]
-/// JSON encoding
+/// The json encoding allows for any {de|se}rializable type to be read/written to the database
+/// using a ValueBuf, for example:
+///
+/// ```rust
+/// extern crate kv;
+/// extern crate serde;
+/// #[macro_use]
+/// extern crate serde_derive;
+///
+/// use serde::{Deserialize, Serialize};
+/// use kv::json::JsonEncoding;
+/// use kv::{Manager, Config, ValueBuf, SerdeEncoding};
+///
+/// #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+/// struct Testing {
+///     a: i32,
+///     b: String
+/// }
+///
+/// fn main() {
+///     let mut mgr = Manager::new();
+///     let mut cfg = Config::default("/tmp/rust-kv");
+///     let handle = mgr.open(cfg).unwrap();
+///     let store = handle.write().unwrap();
+///     let bucket = store.bucket::<&str, ValueBuf<JsonEncoding<Testing>>>(None).unwrap();
+///     let mut txn = store.write_txn().unwrap();
+///     let t = Testing{a: 123, b: "abc".to_owned()};
+///     txn.set(&bucket, "testing", JsonEncoding::from_serde(t)).unwrap();
+///     txn.commit().unwrap();
+///
+///     let txn = store.read_txn().unwrap();
+///     let buf = txn.get(&bucket, "testing").unwrap();
+///     let v = buf.inner().unwrap();
+///     println!("{:?}", v.to_serde());
+/// }
+/// ```
 pub mod json {
     extern crate serde_json;
 
-    pub use self::serde_json::Value as Json;
+    use std::io::{Read, Write};
 
-    impl ::Encoding for Json {
-        fn encode_to<W: ::std::io::Write>(&self, w: &mut W) -> Result<(), ::Error> {
-            match serde_json::to_writer(w, self) {
-                Ok(()) => Ok(()),
-                Err(_) => Err(::Error::InvalidEncoding),
-            }
+    use self::serde_json::{from_reader, to_writer};
+    use serde::{de::DeserializeOwned, ser::Serialize};
+    use super::{Encoding, Error, SerdeEncoding};
+
+    /// An opaque type for JSON encoding that wraps a Serde-compatible type T.
+    #[derive(Debug, Deserialize, Serialize)]
+    pub struct JsonEncoding<T>(T);
+
+    impl<T> SerdeEncoding<T> for JsonEncoding<T>
+    where
+        T: DeserializeOwned + Serialize,
+    {
+        fn from_serde(t: T) -> Self {
+            JsonEncoding(t)
         }
 
-        fn decode_from<R: ::std::io::Read>(r: &mut R) -> Result<Json, ::Error> {
-            match serde_json::from_reader(r) {
-                Ok(x) => Ok(x),
-                Err(_) => Err(::Error::InvalidEncoding),
-            }
+        fn to_serde(self) -> T {
+            self.0
+        }
+    }
+
+    impl<T> Encoding for JsonEncoding<T>
+    where
+        T: DeserializeOwned + Serialize,
+    {
+        fn encode_to<W: Write>(&self, w: &mut W) -> Result<(), Error> {
+            to_writer(w, &self.0).map_err(|_| Error::InvalidEncoding)
+        }
+
+        fn decode_from<R: Read>(r: &mut R) -> Result<Self, Error> {
+            from_reader(r)
+                .map(JsonEncoding)
+                .map_err(|_| Error::InvalidEncoding)
         }
     }
 }
 
 #[cfg(feature = "bincode-value")]
-/// Bincode encoding
+/// The bincode encoding allows for any {de|se}rializable type to be read/written to the database
+/// using a ValueBuf, for example:
+///
+/// ```rust
+/// extern crate kv;
+/// extern crate serde;
+/// #[macro_use]
+/// extern crate serde_derive;
+///
+/// use serde::{Deserialize, Serialize};
+/// use kv::bincode::BincodeEncoding;
+/// use kv::{Manager, Config, ValueBuf, SerdeEncoding};
+///
+/// #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+/// struct Testing {
+///     a: i32,
+///     b: String
+/// }
+///
+/// fn main() {
+///     let mut mgr = Manager::new();
+///     let mut cfg = Config::default("/tmp/rust-kv");
+///     let handle = mgr.open(cfg).unwrap();
+///     let store = handle.write().unwrap();
+///     let bucket = store.bucket::<&str, ValueBuf<BincodeEncoding<Testing>>>(None).unwrap();
+///     let mut txn = store.write_txn().unwrap();
+///     let t = Testing{a: 123, b: "abc".to_owned()};
+///     txn.set(&bucket, "testing", BincodeEncoding::from_serde(t)).unwrap();
+///     txn.commit().unwrap();
+///
+///     let txn = store.read_txn().unwrap();
+///     let buf = txn.get(&bucket, "testing").unwrap();
+///     let v = buf.inner().unwrap();
+///     println!("{:?}", v.to_serde());
+/// }
+/// ```
 pub mod bincode {
     extern crate bincode;
-    use std::collections::BTreeMap;
-    use std::cmp::Ordering;
 
-    #[derive(Debug, Clone, Copy, PartialEq, PartialOrd, Serialize, Deserialize)]
-    /// Float wrapper
-    pub struct Float(f64);
+    use std::io::{Read, Write};
 
-    impl Eq for Float {
+    use self::bincode::{deserialize_from, serialize_into};
+    use serde::{de::DeserializeOwned, ser::Serialize};
+    use super::{Encoding, Error, SerdeEncoding};
 
-    }
+    /// An opaque type for Bincode encoding that wraps a Serde-compatible type T.
+    #[derive(Debug, Deserialize, Serialize)]
+    pub struct BincodeEncoding<T>(T);
 
-    impl Ord for Float {
-        fn cmp(&self, other: &Self) -> Ordering {
-            self.partial_cmp(other).unwrap_or(Ordering::Less)
+    impl<T> SerdeEncoding<T> for BincodeEncoding<T>
+    where
+        T: DeserializeOwned + Serialize,
+    {
+        fn from_serde(t: T) -> Self {
+            BincodeEncoding(t)
+        }
+
+        fn to_serde(self) -> T {
+            self.0
         }
     }
 
-    impl From<f64> for Float {
-        fn from(f: f64) -> Float {
-            Float(f)
-        }
-    }
-
-    impl From<Float> for f64 {
-        fn from(f: Float) -> f64 {
-            f.0
-        }
-    }
-
-    #[derive(Debug, Clone, PartialOrd, Ord, PartialEq, Eq, Serialize, Deserialize)]
-    /// Bincode data
-    pub enum Data {
-        /// Null value
-        Null,
-
-        /// Boolean
-        Bool(bool),
-
-        /// Integer
-        Int(i64),
-
-        /// Double
-        Float(Float),
-
-        /// String
-        String(String),
-
-        /// Array
-        Array(Vec<Data>),
-
-        /// Dictionary
-        Dict(BTreeMap<Data, Data>),
-
-        /// Custom value
-        Custom(String, Box<Data>)
-    }
-
-    impl From<bool> for Data {
-        fn from(b: bool) -> Data {
-            Data::Bool(b)
-        }
-    }
-
-    impl From<i64> for Data {
-        fn from(i: i64) -> Data {
-            Data::Int(i)
-        }
-    }
-
-    impl From<f64> for Data {
-        fn from(f: f64) -> Data {
-            Data::Float(Float(f))
-        }
-    }
-
-    impl From<String> for Data {
-        fn from(s: String) -> Data {
-            Data::String(s)
-        }
-    }
-
-    impl From<Vec<Data>> for Data {
-        fn from(v: Vec<Data>) -> Data {
-            Data::Array(v)
-        }
-    }
-
-    impl From<BTreeMap<Data, Data>> for Data {
-        fn from(d: BTreeMap<Data, Data>) -> Data {
-            Data::Dict(d)
-        }
-    }
-
-    impl From<(String, Data)> for Data {
-        fn from((s, d): (String, Data)) -> Data {
-            Data::Custom(s, Box::new(d))
-        }
-    }
-
-    impl ::Encoding for Data {
-        fn encode_to<W: ::std::io::Write>(&self, w: &mut W) -> Result<(), ::Error> {
-            match bincode::serialize_into(w, self) {
-                Ok(()) => Ok(()),
-                Err(_) => Err(::Error::InvalidEncoding),
-            }
+    impl<T> Encoding for BincodeEncoding<T>
+    where
+        T: DeserializeOwned + Serialize,
+    {
+        fn encode_to<W: Write>(&self, w: &mut W) -> Result<(), Error> {
+            serialize_into(w, &self.0).map_err(|_| Error::InvalidEncoding)
         }
 
-        fn decode_from<R: ::std::io::Read>(r: &mut R) -> Result<Data, ::Error> {
-            match bincode::deserialize_from(r) {
-                Ok(x) => Ok(x),
-                Err(_) => Err(::Error::InvalidEncoding),
-            }
+        fn decode_from<R: Read>(r: &mut R) -> Result<Self, Error> {
+            deserialize_from(r)
+                .map(BincodeEncoding)
+                .map_err(|_| Error::InvalidEncoding)
         }
     }
 }
@@ -210,7 +287,7 @@ pub mod capnp {
 
     pub enum Proto {
         Writer(Builder<capnp::message::HeapAllocator>),
-        Reader(Reader<capnp::serialize::OwnedSegments>)
+        Reader(Reader<capnp::serialize::OwnedSegments>),
     }
 
     impl From<Builder<capnp::message::HeapAllocator>> for Proto {
@@ -229,7 +306,7 @@ pub mod capnp {
         fn encode_to<W: ::std::io::Write>(&self, w: &mut W) -> Result<(), ::Error> {
             match self {
                 Proto::Writer(p) => Ok(capnp::serialize::write_message(w, p)?),
-                Proto::Reader(_) => Err(::Error::InvalidEncoding)
+                Proto::Reader(_) => Err(::Error::InvalidEncoding),
             }
         }
 
@@ -237,11 +314,10 @@ pub mod capnp {
             let opts = capnp::message::ReaderOptions::default();
             let msg = match capnp::serialize::read_message(r, opts) {
                 Ok(msg) => msg,
-                Err(_) => return Err(::Error::InvalidEncoding)
+                Err(_) => return Err(::Error::InvalidEncoding),
             };
 
             Ok(Proto::Reader(msg))
         }
     }
 }
-

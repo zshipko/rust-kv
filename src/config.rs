@@ -15,7 +15,7 @@ use error::Error;
 pub enum Flag {
     Default,
     ReverseKey,
-    IntegerKey
+    IntegerKey,
 }
 
 impl Flag {
@@ -23,7 +23,7 @@ impl Flag {
         match self {
             &Flag::ReverseKey => DatabaseFlags::REVERSE_KEY,
             &Flag::IntegerKey => DatabaseFlags::INTEGER_KEY,
-            &Flag::Default => DatabaseFlags::empty()
+            &Flag::Default => DatabaseFlags::empty(),
         }
     }
 }
@@ -126,10 +126,8 @@ impl Config {
 
     /// Add a bucket
     pub fn bucket<S: AsRef<str>>(&mut self, name: S, f: Option<Flag>) -> &mut Config {
-        self.buckets.insert(
-            String::from(name.as_ref()),
-            f.unwrap_or(Flag::Default)
-        );
+        self.buckets
+            .insert(String::from(name.as_ref()), f.unwrap_or(Flag::Default));
         self
     }
 
@@ -157,7 +155,6 @@ impl Config {
             .set_map_size(self.map_size)
             .open(self.path.as_path())
         {
-
             Ok(db) => Ok(db),
             Err(e) => {
                 let _ = fs::remove_dir_all(&self.path);

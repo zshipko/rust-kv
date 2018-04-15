@@ -35,4 +35,4 @@ pub use cursor::{Cursor, CursorOp};
 pub use buf::ValueBuf;
 pub use types::{Integer, Key, Value, ValueMut, ValueRef};
 pub use manager::Manager;
-pub use encoding::Encoding;
+pub use encoding::{Encoding, SerdeEncoding};
