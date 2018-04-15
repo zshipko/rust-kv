@@ -85,7 +85,7 @@ fn test_cursor() {
 #[cfg(feature = "cbor-value")]
 #[test]
 fn test_cbor_encoding() {
-    use encoding::SerdeEncoding;
+    use encoding::Serde;
     use cbor::Cbor;
     use buf::ValueBuf;
     let path = reset("cbor");
@@ -116,7 +116,7 @@ fn test_cbor_encoding() {
 #[cfg(feature = "json-value")]
 #[test]
 fn test_json_encoding() {
-    use encoding::SerdeEncoding;
+    use encoding::Serde;
     use json::Json;
     use buf::ValueBuf;
     let path = reset("json");
@@ -147,7 +147,7 @@ fn test_json_encoding() {
 #[cfg(feature = "bincode-value")]
 #[test]
 fn test_bincode_encoding() {
-    use encoding::SerdeEncoding;
+    use encoding::Serde;
     use bincode::Bincode;
     use buf::ValueBuf;
     let path = reset("bincode");

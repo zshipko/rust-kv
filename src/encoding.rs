@@ -27,11 +27,11 @@ pub trait Encoding: Sized {
 }
 
 /// A trait for types wrapping Serde values
-pub trait SerdeEncoding<T>: Encoding {
-    /// Wraps a serde-compatible type in a `SerdeEncoding`
+pub trait Serde<T>: Encoding {
+    /// Wraps a serde-compatible type in a `Serde`
     fn from_serde(t: T) -> Self;
 
-    /// Unwraps a serde-compatible type from a `SerdeEncoding`
+    /// Unwraps a serde-compatible type from a `Serde`
     fn to_serde(self) -> T;
 }
 
@@ -53,7 +53,7 @@ impl<E: Encoding> From<E> for ValueBuf<E> {
 ///
 /// use serde::{Deserialize, Serialize};
 /// use kv::cbor::Cbor;
-/// use kv::{Manager, Config, ValueBuf, SerdeEncoding};
+/// use kv::{Manager, Config, ValueBuf, Serde};
 ///
 /// #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 /// struct Testing {
@@ -85,13 +85,13 @@ pub mod cbor {
 
     use self::serde_cbor::{from_reader, to_writer};
     use serde::{de::DeserializeOwned, ser::Serialize};
-    use super::{Encoding, Error, SerdeEncoding};
+    use super::{Encoding, Error, Serde};
 
     /// An opaque type for CBOR encoding that wraps a Serde-compatible type T.
     #[derive(Debug, Deserialize, Serialize)]
     pub struct Cbor<T>(T);
 
-    impl<T> SerdeEncoding<T> for Cbor<T>
+    impl<T> Serde<T> for Cbor<T>
     where
         T: DeserializeOwned + Serialize,
     {
@@ -132,7 +132,7 @@ pub mod cbor {
 ///
 /// use serde::{Deserialize, Serialize};
 /// use kv::json::Json;
-/// use kv::{Manager, Config, ValueBuf, SerdeEncoding};
+/// use kv::{Manager, Config, ValueBuf, Serde};
 ///
 /// #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 /// struct Testing {
@@ -164,13 +164,13 @@ pub mod json {
 
     use self::serde_json::{from_reader, to_writer};
     use serde::{de::DeserializeOwned, ser::Serialize};
-    use super::{Encoding, Error, SerdeEncoding};
+    use super::{Encoding, Error, Serde};
 
     /// An opaque type for JSON encoding that wraps a Serde-compatible type T.
     #[derive(Debug, Deserialize, Serialize)]
     pub struct Json<T>(T);
 
-    impl<T> SerdeEncoding<T> for Json<T>
+    impl<T> Serde<T> for Json<T>
     where
         T: DeserializeOwned + Serialize,
     {
@@ -211,7 +211,7 @@ pub mod json {
 ///
 /// use serde::{Deserialize, Serialize};
 /// use kv::bincode::Bincode;
-/// use kv::{Manager, Config, ValueBuf, SerdeEncoding};
+/// use kv::{Manager, Config, ValueBuf, Serde};
 ///
 /// #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 /// struct Testing {
@@ -243,13 +243,13 @@ pub mod bincode {
 
     use self::bincode::{deserialize_from, serialize_into};
     use serde::{de::DeserializeOwned, ser::Serialize};
-    use super::{Encoding, Error, SerdeEncoding};
+    use super::{Encoding, Error, Serde};
 
     /// An opaque type for Bincode encoding that wraps a Serde-compatible type T.
     #[derive(Debug, Deserialize, Serialize)]
     pub struct Bincode<T>(T);
 
-    impl<T> SerdeEncoding<T> for Bincode<T>
+    impl<T> Serde<T> for Bincode<T>
     where
         T: DeserializeOwned + Serialize,
     {
