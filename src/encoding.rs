@@ -33,6 +33,11 @@ pub trait Serde<T>: Encoding {
 
     /// Unwraps a serde-compatible type from a `Serde`
     fn to_serde(self) -> T;
+
+    /// Converts a serde-compatible type to `ValueBuf` directly
+    fn to_value_buf(t: T) -> Result<ValueBuf<Self>, Error> {
+        Self::from_serde(t).encode()
+    }
 }
 
 #[cfg(feature = "cbor-value")]
@@ -66,7 +71,7 @@ pub trait Serde<T>: Encoding {
 ///     txn.set(
 ///         &bucket,
 ///         "testing",
-///         Cbor::from_serde(t).encode()?,
+///         Cbor::to_value_buf(t)?,
 ///     )?;
 ///     txn.commit()?;
 ///
@@ -93,6 +98,18 @@ pub mod cbor {
     /// An opaque type for CBOR encoding that wraps a Serde-compatible type T.
     #[derive(Debug, Deserialize, Serialize)]
     pub struct Cbor<T>(T);
+
+    impl<T> AsRef<T> for Cbor<T> {
+        fn as_ref(&self) -> &T {
+            &self.0
+        }
+    }
+
+    impl<T> AsMut<T> for Cbor<T> {
+        fn as_mut(&mut self) -> &mut T {
+            &mut self.0
+        }
+    }
 
     impl<T> Serde<T> for Cbor<T>
     where
@@ -152,7 +169,7 @@ pub mod cbor {
 ///     txn.set(
 ///         &bucket,
 ///         "testing",
-///         Json::from_serde(t).encode()?,
+///         Json::to_value_buf(t)?
 ///     )?;
 ///     txn.commit()?;
 ///
@@ -179,6 +196,18 @@ pub mod json {
     /// An opaque type for JSON encoding that wraps a Serde-compatible type T.
     #[derive(Debug, Deserialize, Serialize)]
     pub struct Json<T>(T);
+
+    impl<T> AsRef<T> for Json<T> {
+        fn as_ref(&self) -> &T {
+            &self.0
+        }
+    }
+
+    impl<T> AsMut<T> for Json<T> {
+        fn as_mut(&mut self) -> &mut T {
+            &mut self.0
+        }
+    }
 
     impl<T> Serde<T> for Json<T>
     where
@@ -238,7 +267,7 @@ pub mod json {
 ///     txn.set(
 ///         &bucket,
 ///         "testing",
-///         Bincode::from_serde(t).encode()?,
+///         Bincode::to_value_buf(t)?,
 ///     )?;
 ///     txn.commit()?;
 ///
@@ -265,6 +294,18 @@ pub mod bincode {
     /// An opaque type for Bincode encoding that wraps a Serde-compatible type T.
     #[derive(Debug, Deserialize, Serialize)]
     pub struct Bincode<T>(T);
+
+    impl<T> AsRef<T> for Bincode<T> {
+        fn as_ref(&self) -> &T {
+            &self.0
+        }
+    }
+
+    impl<T> AsMut<T> for Bincode<T> {
+        fn as_mut(&mut self) -> &mut T {
+            &mut self.0
+        }
+    }
 
     impl<T> Serde<T> for Bincode<T>
     where

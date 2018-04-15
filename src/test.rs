@@ -4,8 +4,6 @@ use config::{Config, Flag};
 use store::Store;
 use types::Integer;
 use manager::Manager;
-#[cfg(any(feature = "bincode-values", feature = "cbor-value", feature = "json-value"))]
-use Encoding;
 
 fn reset(name: &str) -> String {
     let s = format!("./test/{}", name);
@@ -100,7 +98,7 @@ fn test_cbor_encoding() {
 
     let mut txn = store.write_txn().unwrap();
     for i in 0..2 {
-        match txn.set_no_overwrite(&bucket, "testing", Cbor::from_serde(true).encode().unwrap()) {
+        match txn.set_no_overwrite(&bucket, "testing", Cbor::to_value_buf(true).unwrap()) {
             Ok(_) => assert_eq!(i, 0),
             Err(_) => assert_eq!(i, 1),
         }
@@ -129,7 +127,7 @@ fn test_json_encoding() {
 
     let mut txn = store.write_txn().unwrap();
     for i in 0..2 {
-        match txn.set_no_overwrite(&bucket, "testing", Json::from_serde(true).encode().unwrap()) {
+        match txn.set_no_overwrite(&bucket, "testing", Json::to_value_buf(true).unwrap()) {
             Ok(_) => assert_eq!(i, 0),
             Err(_) => assert_eq!(i, 1),
         }
@@ -161,7 +159,7 @@ fn test_bincode_encoding() {
         match txn.set_no_overwrite(
             &bucket,
             "testing",
-            Bincode::from_serde(12345).encode().unwrap(),
+            Bincode::to_value_buf(12345).unwrap(),
         ) {
             Ok(_) => assert_eq!(i, 0),
             Err(_) => assert_eq!(i, 1),
