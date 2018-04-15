@@ -1,6 +1,58 @@
 #![deny(missing_docs)]
 
-//! `kv` is a simple way to embed a key/value store in any application written in Rust
+//! `kv` is a simple way to embed a key/value store in Rust applications. It is build on LMDB and
+//! aims to be as lightweight as possible, while still providing a nice high level interface.
+//!
+//! ## Getting started
+//!
+//! ```rust
+//! extern crate kv;
+//!
+//! use kv::{Config, Manager, ValueRef};
+//!
+//! fn main() {
+//!     // First step create a manager, this ensured that each LMDB environment will only be
+//!     // accessed once per process
+//!     let mut mgr = Manager::new();
+//!
+//!     // Next configure a database
+//!     let mut cfg = Config::default("/tmp/rust-kv");
+//!
+//!     // Add a bucket named `test`
+//!     cfg.bucket("test", None);
+//!
+//!     // Get a Store handle
+//!     let handle = mgr.open(cfg).unwrap();
+//!
+//!     // Get read-write access to the underlying store
+//!     let store = handle.write().unwrap();
+//!
+//!     // A Bucket provides typed access to an LMDB database
+//!     let bucket = store.bucket::<&str, &str>(Some("test")).unwrap();
+//!
+//!     {
+//!         // Finally, a transaction is needed, they can be read-write or readonly, here we will use a
+//!         // write transaction to add data
+//!         let mut txn = store.write_txn().unwrap();
+//!
+//!         // To set a value
+//!         let () = txn.set(&bucket, "testing", "abc123").unwrap();
+//!
+//!         // Make sure to commit the transaction. There is also an `abort` function to abandon
+//!         // the transaction
+//!         txn.commit().unwrap();
+//!     }
+//!
+//!     {
+//!         // This time a readonly transaction
+//!         let txn = store.read_txn().unwrap();
+//!
+//!         // Getting a value is easy once everything is set up
+//!         let val = txn.get(&bucket, "testing").unwrap();
+//!         println!("testing => {}", val);
+//!     }
+//! }
+//! ```
 
 #[macro_use]
 extern crate failure;
