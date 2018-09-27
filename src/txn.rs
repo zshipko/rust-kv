@@ -108,6 +108,17 @@ impl<'env> Txn<'env> {
         }
     }
 
+    /// Remove all items from the database
+    pub fn clear<K: Key, V: Value<'env>>(
+        &mut self,
+        bucket: &Bucket<'env, K, V>,
+    ) -> Result<(), Error> {
+        match self {
+            &mut Txn::ReadOnly(_) => Err(Error::ReadOnly),
+            &mut Txn::ReadWrite(ref mut txn) => Ok(txn.clear_db(bucket.db())?),
+        }
+    }
+
     /// Reserve a buffer
     pub fn reserve<K: Key, V: Value<'env>>(
         &'env mut self,
