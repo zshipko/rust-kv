@@ -78,6 +78,25 @@ fn test_cursor() {
             assert_eq!(v, format!("{}", index));
             index += 1;
         }
+
+        assert_eq!(index, 100);
+    }
+    txn.abort();
+
+    let mut txn = store.write_txn().unwrap();
+    txn.clear_db(&bucket).unwrap();
+    txn.commit().unwrap();
+
+    let txn = store.read_txn().unwrap();
+    {
+        let mut cursor = txn.read_cursor(&bucket).unwrap();
+        let mut index = 0;
+
+        for (_, _) in cursor.iter() {
+            index += 1;
+        }
+
+        assert_eq!(index, 0);
     }
     txn.abort();
 }
