@@ -40,9 +40,7 @@ impl AsRef<[u8]> for Integer {
 impl<'a> From<&'a [u8]> for Integer {
     fn from(buf: &'a [u8]) -> Integer {
         let mut dst = Integer::from(0);
-        for i in 0..8 {
-            dst.0[i] = buf[i]
-        }
+        dst.0[..8].clone_from_slice(&buf[..8]);
         dst
     }
 }

@@ -70,7 +70,7 @@ impl Error {
     /// Returns true when the error is because of a duplicate key
     pub fn key_exists_error(&self) -> bool {
         match self {
-            &Error::LMDB(lmdb::Error::KeyExist) => true,
+            Error::LMDB(lmdb::Error::KeyExist) => true,
             _ => false,
         }
     }

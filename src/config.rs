@@ -1,9 +1,9 @@
+use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 use std::{fs, io};
-use std::collections::HashMap;
 
-use toml;
 use lmdb;
+use toml;
 
 /// Database Flags
 pub use lmdb::DatabaseFlags;
@@ -21,9 +21,9 @@ pub enum Flag {
 impl Flag {
     pub(crate) fn database_flags(&self) -> lmdb::DatabaseFlags {
         match self {
-            &Flag::ReverseKey => DatabaseFlags::REVERSE_KEY,
-            &Flag::IntegerKey => DatabaseFlags::INTEGER_KEY,
-            &Flag::Default => DatabaseFlags::empty(),
+            Flag::ReverseKey => DatabaseFlags::REVERSE_KEY,
+            Flag::IntegerKey => DatabaseFlags::INTEGER_KEY,
+            Flag::Default => DatabaseFlags::empty(),
         }
     }
 }
@@ -68,7 +68,8 @@ impl Config {
             Ok(s) => s,
             Err(_) => return Err(Error::InvalidConfiguration),
         };
-        Ok(w.write_all(s.as_ref())?)
+        w.write_all(s.as_ref())?;
+        Ok(())
     }
 
     /// Save Config to a file

@@ -4,8 +4,8 @@ use lmdb;
 
 use config::{Config, DatabaseFlags};
 use error::Error;
-use txn::Txn;
 use std::collections::HashMap;
+use txn::Txn;
 use types::{Integer, Key, Value};
 
 /// A Store is used to keep data on disk using LMDB
@@ -34,7 +34,7 @@ impl<'a, K: Key, V: Value<'a>> Bucket<'a, K, V> {
 impl Store {
     pub(crate) fn wrap(env: lmdb::Environment, config: Config) -> Store {
         let mut store = Store {
-            env: env,
+            env,
             buckets: HashMap::new(),
             cfg: config,
         };
@@ -89,7 +89,7 @@ impl Store {
         let n = name.map(String::from);
         match self.buckets.get(&n) {
             Some(flags) => {
-                let mut f = flags.clone();
+                let mut f = *flags;
                 f.insert(lmdb::DatabaseFlags::INTEGER_KEY);
                 Ok(Bucket(
                     self.env.create_db(name, f)?,
@@ -103,14 +103,14 @@ impl Store {
 
     #[inline]
     /// Open a readonly transaction
-    pub fn read_txn<'env>(&'env self) -> Result<Txn<'env>, Error> {
+    pub fn read_txn(&self) -> Result<Txn, Error> {
         let txn = self.env.begin_ro_txn()?;
         Ok(Txn::read_only(txn))
     }
 
     #[inline]
     /// Open a writable transaction
-    pub fn write_txn<'env>(&'env self) -> Result<Txn<'env>, Error> {
+    pub fn write_txn(&self) -> Result<Txn, Error> {
         if self.cfg.readonly {
             return Err(Error::ReadOnly);
         }
@@ -122,7 +122,8 @@ impl Store {
     #[inline]
     /// Sync data to disk
     pub fn sync(&self, force: bool) -> Result<(), Error> {
-        Ok(self.env.sync(force)?)
+        self.env.sync(force)?;
+        Ok(())
     }
 
     #[inline]

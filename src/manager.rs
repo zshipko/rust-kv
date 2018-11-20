@@ -28,6 +28,7 @@ pub type Handle = Arc<RwLock<Store>>;
 
 /// A process is only permitted to have one open handle to each database. This manager
 /// exists to enforce that constraint: don't open databases directly.
+#[derive(Default)]
 pub struct Manager {
     stores: Mutex<BTreeMap<PathBuf, Handle>>,
 }
@@ -41,7 +42,7 @@ impl Manager {
     }
 
     /// Return the open store at `path`, returning `None` if it has not already been opened.
-    pub fn get<'p, P>(&self, path: P) -> Result<Option<Handle>, Error>
+    pub fn get<P>(&self, path: P) -> Result<Option<Handle>, Error>
     where
         P: AsRef<Path>,
     {

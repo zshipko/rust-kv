@@ -1,9 +1,9 @@
 use lmdb;
 use lmdb::Transaction;
 
+use cursor::Cursor;
 use error::Error;
 use store::Bucket;
-use cursor::Cursor;
 use types::{Key, Value, ValueMut};
 
 /// Access to the database
@@ -19,8 +19,8 @@ impl<'env> Txn<'env> {
     /// Returns true when the transaction is ReadOnly
     pub fn is_read_only(&self) -> bool {
         match self {
-            &Txn::ReadOnly(_) => true,
-            &Txn::ReadWrite(_) => false,
+            Txn::ReadOnly(_) => true,
+            Txn::ReadWrite(_) => false,
         }
     }
 
@@ -35,9 +35,10 @@ impl<'env> Txn<'env> {
     /// Ends the transaction, saving all changes
     pub fn commit(self) -> Result<(), Error> {
         match self {
-            Txn::ReadOnly(txn) => Ok(txn.commit()?),
-            Txn::ReadWrite(txn) => Ok(txn.commit()?),
+            Txn::ReadOnly(txn) => txn.commit()?,
+            Txn::ReadWrite(txn) => txn.commit()?,
         }
+        Ok(())
     }
 
     /// Ends the transaction, discarding all changes
@@ -55,8 +56,8 @@ impl<'env> Txn<'env> {
         key: K,
     ) -> Result<V, Error> {
         match self {
-            &Txn::ReadOnly(ref txn) => Ok(V::from_raw(txn.get(bucket.db(), &key.as_ref())?)),
-            &Txn::ReadWrite(ref txn) => Ok(V::from_raw(txn.get(bucket.db(), &key.as_ref())?)),
+            Txn::ReadOnly(ref txn) => Ok(V::from_raw(txn.get(bucket.db(), &key.as_ref())?)),
+            Txn::ReadWrite(ref txn) => Ok(V::from_raw(txn.get(bucket.db(), &key.as_ref())?)),
         }
     }
 
@@ -68,13 +69,16 @@ impl<'env> Txn<'env> {
         val: X,
     ) -> Result<(), Error> {
         match self {
-            &mut Txn::ReadOnly(_) => Err(Error::ReadOnly),
-            &mut Txn::ReadWrite(ref mut txn) => Ok(txn.put(
-                bucket.db(),
-                &key.as_ref().as_ref(),
-                &val.into(),
-                lmdb::WriteFlags::empty(),
-            )?),
+            Txn::ReadOnly(_) => Err(Error::ReadOnly),
+            Txn::ReadWrite(ref mut txn) => {
+                txn.put(
+                    bucket.db(),
+                    &key.as_ref(),
+                    &val.into(),
+                    lmdb::WriteFlags::empty(),
+                )?;
+                Ok(())
+            }
         }
     }
 
@@ -86,13 +90,16 @@ impl<'env> Txn<'env> {
         val: X,
     ) -> Result<(), Error> {
         match self {
-            &mut Txn::ReadOnly(_) => Err(Error::ReadOnly),
-            &mut Txn::ReadWrite(ref mut txn) => Ok(txn.put(
-                bucket.db(),
-                &key.as_ref(),
-                &val.into(),
-                lmdb::WriteFlags::NO_OVERWRITE,
-            )?),
+            Txn::ReadOnly(_) => Err(Error::ReadOnly),
+            Txn::ReadWrite(ref mut txn) => {
+                txn.put(
+                    bucket.db(),
+                    &key.as_ref(),
+                    &val.into(),
+                    lmdb::WriteFlags::NO_OVERWRITE,
+                )?;
+                Ok(())
+            }
         }
     }
 
@@ -103,8 +110,11 @@ impl<'env> Txn<'env> {
         key: K,
     ) -> Result<(), Error> {
         match self {
-            &mut Txn::ReadOnly(_) => Err(Error::ReadOnly),
-            &mut Txn::ReadWrite(ref mut txn) => Ok(txn.del(bucket.db(), &key.as_ref(), None)?),
+            Txn::ReadOnly(_) => Err(Error::ReadOnly),
+            Txn::ReadWrite(ref mut txn) => {
+                txn.del(bucket.db(), &key.as_ref(), None)?;
+                Ok(())
+            }
         }
     }
 
@@ -114,8 +124,11 @@ impl<'env> Txn<'env> {
         bucket: &Bucket<'env, K, V>,
     ) -> Result<(), Error> {
         match self {
-            &mut Txn::ReadOnly(_) => Err(Error::ReadOnly),
-            &mut Txn::ReadWrite(ref mut txn) => Ok(txn.clear_db(bucket.db())?),
+            Txn::ReadOnly(_) => Err(Error::ReadOnly),
+            Txn::ReadWrite(ref mut txn) => {
+                txn.clear_db(bucket.db())?;
+                Ok(())
+            }
         }
     }
 
@@ -127,8 +140,8 @@ impl<'env> Txn<'env> {
         len: usize,
     ) -> Result<ValueMut<'env>, Error> {
         match self {
-            &mut Txn::ReadOnly(_) => Err(Error::ReadOnly),
-            &mut Txn::ReadWrite(ref mut txn) => Ok(ValueMut::new(txn.reserve(
+            Txn::ReadOnly(_) => Err(Error::ReadOnly),
+            Txn::ReadWrite(ref mut txn) => Ok(ValueMut::new(txn.reserve(
                 bucket.db(),
                 &key.as_ref(),
                 len,
@@ -145,8 +158,8 @@ impl<'env> Txn<'env> {
         len: usize,
     ) -> Result<ValueMut<'env>, Error> {
         match self {
-            &mut Txn::ReadOnly(_) => Err(Error::ReadOnly),
-            &mut Txn::ReadWrite(ref mut txn) => Ok(ValueMut::new(txn.reserve(
+            Txn::ReadOnly(_) => Err(Error::ReadOnly),
+            Txn::ReadWrite(ref mut txn) => Ok(ValueMut::new(txn.reserve(
                 bucket.db(),
                 &key.as_ref(),
                 len,
@@ -161,8 +174,8 @@ impl<'env> Txn<'env> {
         bucket: &Bucket<'env, K, V>,
     ) -> Result<Cursor<'env, K, V>, Error> {
         match self {
-            &Txn::ReadOnly(ref txn) => Ok(Cursor::read_only(txn.open_ro_cursor(bucket.db())?)),
-            &Txn::ReadWrite(ref txn) => Ok(Cursor::read_only(txn.open_ro_cursor(bucket.db())?)),
+            Txn::ReadOnly(ref txn) => Ok(Cursor::read_only(txn.open_ro_cursor(bucket.db())?)),
+            Txn::ReadWrite(ref txn) => Ok(Cursor::read_only(txn.open_ro_cursor(bucket.db())?)),
         }
     }
 
@@ -172,19 +185,17 @@ impl<'env> Txn<'env> {
         bucket: &Bucket<'env, K, V>,
     ) -> Result<Cursor<'env, K, V>, Error> {
         match self {
-            &mut Txn::ReadOnly(_) => Err(Error::ReadOnly),
-            &mut Txn::ReadWrite(ref mut txn) => {
-                Ok(Cursor::read_write(txn.open_rw_cursor(bucket.db())?))
-            }
+            Txn::ReadOnly(_) => Err(Error::ReadOnly),
+            Txn::ReadWrite(ref mut txn) => Ok(Cursor::read_write(txn.open_rw_cursor(bucket.db())?)),
         }
     }
 
     /// Open a nested transaction
     /// NOTE: you must alread be in a read/write transaction otherwise an error will be returned
-    pub fn txn<'a>(&'a mut self) -> Result<Txn<'a>, Error> {
+    pub fn txn(&mut self) -> Result<Txn, Error> {
         match self {
-            &mut Txn::ReadOnly(_) => Err(Error::ReadOnly),
-            &mut Txn::ReadWrite(ref mut txn) => Ok(Txn::ReadWrite(txn.begin_nested_txn()?)),
+            Txn::ReadOnly(_) => Err(Error::ReadOnly),
+            Txn::ReadWrite(ref mut txn) => Ok(Txn::ReadWrite(txn.begin_nested_txn()?)),
         }
     }
 }
