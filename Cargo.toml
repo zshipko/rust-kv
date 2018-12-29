@@ -24,6 +24,7 @@ rmp-serde = { version = "0.13", optional = true }
 
 [features]
 default = []
+all = ["cbor-value", "json-value", "bincode-value", "msgpack-value"]
 cbor-value = ["serde_cbor"]
 json-value = ["serde_json"]
 bincode-value = ["bincode"]
