@@ -3,8 +3,8 @@ use std::marker::PhantomData;
 use lmdb;
 use lmdb::Cursor as LMDBCursor;
 
-use error::Error;
-use types::{Key, Value};
+use crate::error::Error;
+use crate::types::{Key, Value};
 
 pub struct Hidden<A, B>(PhantomData<A>, PhantomData<B>);
 

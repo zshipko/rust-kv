@@ -1,10 +1,10 @@
 use lmdb;
 use lmdb::Transaction;
 
-use cursor::Cursor;
-use error::Error;
-use store::Bucket;
-use types::{Key, Value, ValueMut};
+use crate::cursor::Cursor;
+use crate::error::Error;
+use crate::store::Bucket;
+use crate::types::{Key, Value, ValueMut};
 
 /// Access to the database
 pub enum Txn<'env> {

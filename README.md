@@ -14,12 +14,12 @@ An embedded key/value store for Rust built on [LMDB](https://github.com/LMDB/lmd
 
 * `cbor-value`
     - CBOR value encoding using `serde`
+* `msgpack-value`
+    - MessagePack encoding using `serde`
 * `json-value`
     - JSON value encoding using `serde`
 * `bincode-value`
     - bincode value encoding using `serde`
-* `capnp-value`
-    - Cap'n Proto value encoding using `capnp`
 
 Some examples of implementing your own encodings using serde can be found [here](https://github.com/asonix/kv-testing)
 

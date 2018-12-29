@@ -9,20 +9,14 @@
 // specific language governing permissions and limitations under the License.
 
 use std::collections::BTreeMap;
-
 use std::collections::btree_map::Entry;
-
 use std::path::{Path, PathBuf};
-
 use std::fs;
-
 use std::sync::{Arc, Mutex, RwLock};
 
-use error::Error;
-
-use store::Store;
-
-use config::Config;
+use crate::error::Error;
+use crate::store::Store;
+use crate::config::Config;
 
 pub type Handle = Arc<RwLock<Store>>;
 

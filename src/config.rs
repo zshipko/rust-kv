@@ -8,7 +8,7 @@ use toml;
 /// Database Flags
 pub use lmdb::DatabaseFlags;
 
-use error::Error;
+use crate::error::Error;
 
 /// Bucket flag, used when creating/opening a bucket
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]

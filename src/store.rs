@@ -1,12 +1,12 @@
 use std::marker::PhantomData;
+use std::collections::HashMap;
 
 use lmdb;
 
-use config::{Config, DatabaseFlags};
-use error::Error;
-use std::collections::HashMap;
-use txn::Txn;
-use types::{Integer, Key, Value};
+use crate::config::{Config, DatabaseFlags};
+use crate::error::Error;
+use crate::txn::Txn;
+use crate::types::{Integer, Key, Value};
 
 /// A Store is used to keep data on disk using LMDB
 pub struct Store {

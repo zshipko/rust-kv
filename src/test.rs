@@ -1,9 +1,9 @@
 use std::{fs, path};
 
-use config::{Config, Flag};
-use store::Store;
-use types::Integer;
-use manager::Manager;
+use crate::config::{Config, Flag};
+use crate::store::Store;
+use crate::types::Integer;
+use crate::manager::Manager;
 
 fn reset(name: &str) -> String {
     let s = format!("./test/{}", name);
@@ -104,9 +104,9 @@ fn test_cursor() {
 #[cfg(feature = "cbor-value")]
 #[test]
 fn test_cbor_encoding() {
-    use encoding::Serde;
-    use cbor::Cbor;
-    use buf::ValueBuf;
+    use crate::encoding::Serde;
+    use crate::cbor::Cbor;
+    use crate::buf::ValueBuf;
     let path = reset("cbor");
 
     // Create a new store
@@ -130,12 +130,41 @@ fn test_cbor_encoding() {
     txn.abort();
 }
 
+#[cfg(feature = "msgpack-value")]
+#[test]
+fn test_msgpack_encoding() {
+    use crate::encoding::Serde;
+    use crate::msgpack::Msgpack;
+    use crate::buf::ValueBuf;
+    let path = reset("msgpack");
+
+    // Create a new store
+    let cfg = Config::default(path.clone());
+    let store = Store::new(cfg).unwrap();
+    let bucket = store.bucket::<&str, ValueBuf<Msgpack<bool>>>(None).unwrap();
+    assert!(path::Path::new(path.as_str()).exists());
+
+    let mut txn = store.write_txn().unwrap();
+    for i in 0..2 {
+        match txn.set_no_overwrite(&bucket, "testing", Msgpack::to_value_buf(true).unwrap()) {
+            Ok(_) => assert_eq!(i, 0),
+            Err(_) => assert_eq!(i, 1),
+        }
+    }
+    txn.commit().unwrap();
+
+    let txn = store.read_txn().unwrap();
+    let v = txn.get(&bucket, "testing").unwrap().inner().unwrap();
+    assert_eq!(v.to_serde(), true);
+    txn.abort();
+}
+
 #[cfg(feature = "json-value")]
 #[test]
 fn test_json_encoding() {
-    use encoding::Serde;
-    use json::Json;
-    use buf::ValueBuf;
+    use crate::encoding::Serde;
+    use crate::json::Json;
+    use crate::buf::ValueBuf;
     let path = reset("json");
 
     // Create a new store
@@ -162,9 +191,9 @@ fn test_json_encoding() {
 #[cfg(feature = "bincode-value")]
 #[test]
 fn test_bincode_encoding() {
-    use encoding::Serde;
-    use bincode::Bincode;
-    use buf::ValueBuf;
+    use crate::encoding::Serde;
+    use crate::bincode::Bincode;
+    use crate::buf::ValueBuf;
     let path = reset("bincode");
 
     // Create a new store

@@ -6,8 +6,6 @@
 //! ## Getting started
 //!
 //! ```rust
-//! extern crate kv;
-//!
 //! use kv::{Config, Error, Manager, ValueRef};
 //!
 //! fn run() -> Result<(), Error> {
@@ -81,18 +79,20 @@ mod encoding;
 mod test;
 
 #[cfg(feature = "cbor-value")]
-pub use encoding::cbor;
+pub use crate::encoding::cbor;
 #[cfg(feature = "json-value")]
-pub use encoding::json;
+pub use crate::encoding::json;
 #[cfg(feature = "bincode-value")]
-pub use encoding::bincode;
+pub use crate::encoding::bincode;
+#[cfg(feature = "msgpack-value")]
+pub use crate::encoding::msgpack;
 
-pub use config::{Config, DatabaseFlags};
-pub use error::Error;
-pub use txn::Txn;
-pub use store::{Bucket, Store};
-pub use cursor::{Cursor, CursorOp};
-pub use buf::ValueBuf;
-pub use types::{Integer, Key, Value, ValueMut, ValueRef};
-pub use manager::Manager;
-pub use encoding::{Encoding, Serde};
+pub use crate::config::{Config, DatabaseFlags};
+pub use crate::error::Error;
+pub use crate::txn::Txn;
+pub use crate::store::{Bucket, Store};
+pub use crate::cursor::{Cursor, CursorOp};
+pub use crate::buf::ValueBuf;
+pub use crate::types::{Integer, Key, Value, ValueMut, ValueRef};
+pub use crate::manager::Manager;
+pub use crate::encoding::{Encoding, Serde};
