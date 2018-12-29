@@ -17,8 +17,7 @@ serde = "1.0"
 serde_derive = "1.0"
 toml = "0.4"
 bincode = { version = "1.0", optional = true }
-capnp = { version = "0.8", optional = true }
-serde_cbor = { version = "0.8", optional = true }
+serde_cbor = { version = "0.9", optional = true }
 serde_json = { version = "1.0", optional = true }
 rmp-serde = { version = "0.13", optional = true }
 
