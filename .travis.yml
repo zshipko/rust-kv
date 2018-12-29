@@ -8,4 +8,4 @@ matrix:
     - rust: nightly
   fast_finish: true
 script:
-  - cargo test --features=cbor-value,json-value,bincode-value,capnp-value --verbose
+  - cargo test --features=cbor-value,json-value,bincode-value,msgpack-value --verbose
