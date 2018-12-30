@@ -1,5 +1,5 @@
-use std::marker::PhantomData;
 use std::collections::HashMap;
+use std::marker::PhantomData;
 
 use lmdb;
 
@@ -99,6 +99,26 @@ impl Store {
             }
             None => Err(Error::InvalidBucket),
         }
+    }
+
+    /// Create a readonly transaction and pass it to the provided function
+    pub fn with_read_txn<'a, Res, F: FnOnce(&Txn<'a>) -> Result<Res, Error>>(
+        &'a self,
+        f: F,
+    ) -> Result<Res, Error> {
+        let txn = self.read_txn()?;
+        f(&txn)
+    }
+
+    /// Create a writable transaction and pass it to the provided function
+    pub fn with_write_txn<'a, Res, F: FnOnce(&mut Txn<'a>) -> Result<Res, Error>>(
+        &'a mut self,
+        f: F,
+    ) -> Result<Res, Error> {
+        let mut txn = self.write_txn()?;
+        let res = f(&mut txn)?;
+        txn.commit()?;
+        Ok(res)
     }
 
     #[inline]
