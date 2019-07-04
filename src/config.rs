@@ -7,6 +7,7 @@ use toml;
 
 /// Database Flags
 pub use lmdb::DatabaseFlags;
+use serde::{Deserialize, Serialize};
 
 use crate::error::Error;
 

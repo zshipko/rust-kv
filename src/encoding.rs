@@ -49,7 +49,7 @@ pub trait Serde<T>: Encoding {
 /// use kv::cbor::Cbor;
 /// use kv::{Config, Encoding, Error, Manager, Serde, ValueBuf};
 ///
-/// #[derive(Debug, Clone, PartialEq, serde_derive::Serialize, serde_derive::Deserialize)]
+/// #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 /// struct Testing {
 ///     a: i32,
 ///     b: String
@@ -84,9 +84,9 @@ pub trait Serde<T>: Encoding {
 pub mod cbor {
     use std::io::{Read, Write};
 
-    use serde_cbor::{from_reader, to_writer};
-    use serde::{de::DeserializeOwned, ser::Serialize};
     use super::{Encoding, Error, Serde};
+    use serde::{de::DeserializeOwned, Deserialize, Serialize};
+    use serde_cbor::{from_reader, to_writer};
 
     /// An opaque type for CBOR encoding that wraps a Serde-compatible type T.
     #[derive(Debug, Deserialize, Serialize)]
@@ -140,7 +140,7 @@ pub mod cbor {
 /// use kv::json::Json;
 /// use kv::{Config, Encoding, Error, Manager, Serde, ValueBuf};
 ///
-/// #[derive(Debug, Clone, PartialEq, serde_derive::Serialize, serde_derive::Deserialize)]
+/// #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 /// struct Testing {
 ///     a: i32,
 ///     b: String
@@ -175,9 +175,9 @@ pub mod cbor {
 pub mod json {
     use std::io::{Read, Write};
 
-    use serde_json::{from_reader, to_writer};
-    use serde::{de::DeserializeOwned, ser::Serialize};
     use super::{Encoding, Error, Serde};
+    use serde::{de::DeserializeOwned, Deserialize, Serialize};
+    use serde_json::{from_reader, to_writer};
 
     /// An opaque type for JSON encoding that wraps a Serde-compatible type T.
     #[derive(Debug, Deserialize, Serialize)]
@@ -231,7 +231,7 @@ pub mod json {
 /// use kv::bincode::Bincode;
 /// use kv::{Config, Encoding, Error, Manager, Serde, ValueBuf};
 ///
-/// #[derive(Debug, Clone, PartialEq, serde_derive::Serialize, serde_derive::Deserialize)]
+/// #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 /// struct Testing {
 ///     a: i32,
 ///     b: String
@@ -266,9 +266,9 @@ pub mod json {
 pub mod bincode {
     use std::io::{Read, Write};
 
-    use bincode::{deserialize_from, serialize_into};
-    use serde::{de::DeserializeOwned, ser::Serialize};
     use super::{Encoding, Error, Serde};
+    use bincode::{deserialize_from, serialize_into};
+    use serde::{de::DeserializeOwned, Deserialize, Serialize};
 
     /// An opaque type for Bincode encoding that wraps a Serde-compatible type T.
     #[derive(Debug, Deserialize, Serialize)]
@@ -324,7 +324,7 @@ pub mod bincode {
 /// use kv::msgpack::Msgpack;
 /// use kv::{Config, Encoding, Error, Manager, Serde, ValueBuf};
 ///
-/// #[derive(Debug, Clone, PartialEq, serde_derive::Serialize, serde_derive::Deserialize)]
+/// #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 /// struct Testing {
 ///     a: i32,
 ///     b: String
@@ -359,9 +359,9 @@ pub mod bincode {
 pub mod msgpack {
     use std::io::{Read, Write};
 
-    use rmp_serde::{from_read, Serializer};
-    use serde::{de::DeserializeOwned, ser::Serialize};
     use super::{Encoding, Error, Serde};
+    use rmp_serde::{from_read, Serializer};
+    use serde::{de::DeserializeOwned, Deserialize, Serialize};
 
     /// An opaque type for Msgpack encoding that wraps a Serde-compatible type T.
     #[derive(Debug, Deserialize, Serialize)]
@@ -398,7 +398,9 @@ pub mod msgpack {
     {
         fn encode_to<W: Write>(&self, w: &mut W) -> Result<(), Error> {
             let mut ser = Serializer::new(w);
-            self.0.serialize(&mut ser).map_err(|_| Error::InvalidEncoding)
+            self.0
+                .serialize(&mut ser)
+                .map_err(|_| Error::InvalidEncoding)
         }
 
         fn decode_from<R: Read>(r: &mut R) -> Result<Self, Error> {

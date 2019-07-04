@@ -58,41 +58,33 @@
 //! # }
 //! ```
 
-#[macro_use]
-extern crate failure;
-extern crate lmdb;
-extern crate serde;
-#[macro_use]
-extern crate serde_derive;
-extern crate toml;
-
-mod config;
-mod error;
-mod txn;
-mod store;
-mod cursor;
-mod types;
 mod buf;
-mod manager;
+mod config;
+mod cursor;
 mod encoding;
+mod error;
+mod manager;
+mod store;
 #[cfg(test)]
 mod test;
+mod txn;
+mod types;
 
+#[cfg(feature = "bincode-value")]
+pub use crate::encoding::bincode;
 #[cfg(feature = "cbor-value")]
 pub use crate::encoding::cbor;
 #[cfg(feature = "json-value")]
 pub use crate::encoding::json;
-#[cfg(feature = "bincode-value")]
-pub use crate::encoding::bincode;
 #[cfg(feature = "msgpack-value")]
 pub use crate::encoding::msgpack;
 
-pub use crate::config::{Config, DatabaseFlags};
-pub use crate::error::Error;
-pub use crate::txn::Txn;
-pub use crate::store::{Bucket, Store};
-pub use crate::cursor::{Cursor, CursorOp};
 pub use crate::buf::ValueBuf;
-pub use crate::types::{Integer, Key, Value, ValueMut, ValueRef};
-pub use crate::manager::Manager;
+pub use crate::config::{Config, DatabaseFlags};
+pub use crate::cursor::{Cursor, CursorOp};
 pub use crate::encoding::{Encoding, Serde};
+pub use crate::error::Error;
+pub use crate::manager::Manager;
+pub use crate::store::{Bucket, Store};
+pub use crate::txn::Txn;
+pub use crate::types::{Integer, Key, Value, ValueMut, ValueRef};

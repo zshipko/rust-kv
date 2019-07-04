@@ -1,6 +1,7 @@
 use std::io;
 use std::sync::PoisonError;
 
+use failure::Fail;
 use lmdb;
 
 #[derive(Debug, Fail)]

@@ -60,8 +60,8 @@ where
     type Item = (K, V);
     fn next(&mut self) -> Option<(K, V)> {
         let (k, v) = match lmdb::Iter::next(&mut self.0) {
-            Some((k, v)) => (k, v),
-            None => return None,
+            Some(Ok((k, v))) => (k, v),
+            _ => return None,
         };
         Some((K::from(k), V::from_raw(v)))
     }
