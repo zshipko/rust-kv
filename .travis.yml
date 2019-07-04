@@ -8,4 +8,4 @@ matrix:
     - rust: nightly
   fast_finish: true
 script:
-  - cargo test --features=all --verbose
+  - cargo test --all-features --verbose
