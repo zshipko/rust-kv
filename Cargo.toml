@@ -1,6 +1,6 @@
 [package]
 name = "kv"
-version = "0.9.0"
+version = "0.9.1"
 authors = ["Zach Shipko <zachshipko@gmail.com>"]
 license = "ISC"
 keywords = ["key-value-store", "database", "lmdb"]
@@ -9,6 +9,9 @@ documentation = "https://docs.rs/kv"
 description = "An embedded key/value store for Rust"
 readme = "README.md"
 edition = "2018"
+
+[package.metadata.docs.rs]
+all-features = true
 
 [dependencies]
 failure = "0.1"
@@ -22,7 +25,6 @@ rmp-serde = { version = "0.13", optional = true }
 
 [features]
 default = []
-all = ["cbor-value", "json-value", "bincode-value", "msgpack-value"]
 cbor-value = ["serde_cbor"]
 json-value = ["serde_json"]
 bincode-value = ["bincode"]
