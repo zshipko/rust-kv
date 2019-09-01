@@ -1,9 +1,9 @@
 use std::io::{self, Read, Write};
 use std::marker::PhantomData;
 
-use crate::types::{Value, ValueMut};
 use crate::encoding::Encoding;
 use crate::error::Error;
+use crate::types::{Value, ValueMut};
 
 /// A Value can be used to dynamically build values
 #[derive(Debug, Clone, PartialEq, PartialOrd)]
