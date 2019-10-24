@@ -89,8 +89,10 @@ impl<'a, K: Key, V: Value<'a>> Cursor<'a, K, V> {
     /// Iterate over all key/value pairs
     pub fn iter(&mut self) -> Iter<'a, K, V> {
         match self {
-            Cursor::ReadOnly(ref mut ro) => Iter(ro.iter(), Hidden(PhantomData, PhantomData)),
-            Cursor::ReadWrite(ref mut rw) => Iter(rw.iter(), Hidden(PhantomData, PhantomData)),
+            Cursor::ReadOnly(ref mut ro) => Iter(ro.iter_start(), Hidden(PhantomData, PhantomData)),
+            Cursor::ReadWrite(ref mut rw) => {
+                Iter(rw.iter_start(), Hidden(PhantomData, PhantomData))
+            }
             Cursor::Phantom(_) => unreachable!(),
         }
     }
