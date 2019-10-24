@@ -1,9 +1,9 @@
 use std::{fs, path};
 
 use crate::config::{Config, Flag};
+use crate::manager::Manager;
 use crate::store::Store;
 use crate::types::Integer;
-use crate::manager::Manager;
 
 fn reset(name: &str) -> String {
     let s = format!("./test/{}", name);
@@ -101,12 +101,44 @@ fn test_cursor() {
     txn.abort();
 }
 
+#[test]
+fn test_iter() {
+    let path = reset("iter");
+
+    // Create a new store
+    let cfg = Config::default(path.clone());
+    let store = Store::new(cfg).unwrap();
+    let bucket = store.int_bucket::<String>(None).unwrap();
+    assert!(path::Path::new(path.as_str()).exists());
+
+    let mut txn = store.write_txn().unwrap();
+
+    for i in 0..100 {
+        txn.set(&bucket, i.into(), format!("{}", i)).unwrap();
+    }
+
+    txn.commit().unwrap();
+
+    let txn = store.read_txn().unwrap();
+    {
+        let mut cursor = txn.read_cursor(&bucket).unwrap();
+
+        cursor.iter().enumerate().for_each(|(index, (k, v))| {
+            assert_eq!(k, Integer::from(index as u64));
+            assert_eq!(v, format!("{}", index));
+        });
+
+        assert_eq!(cursor.iter().count(), 100);
+    }
+    txn.abort();
+}
+
 #[cfg(feature = "cbor-value")]
 #[test]
 fn test_cbor_encoding() {
-    use crate::encoding::Serde;
-    use crate::cbor::Cbor;
     use crate::buf::ValueBuf;
+    use crate::cbor::Cbor;
+    use crate::encoding::Serde;
     let path = reset("cbor");
 
     // Create a new store
@@ -133,9 +165,9 @@ fn test_cbor_encoding() {
 #[cfg(feature = "msgpack-value")]
 #[test]
 fn test_msgpack_encoding() {
+    use crate::buf::ValueBuf;
     use crate::encoding::Serde;
     use crate::msgpack::Msgpack;
-    use crate::buf::ValueBuf;
     let path = reset("msgpack");
 
     // Create a new store
@@ -162,9 +194,9 @@ fn test_msgpack_encoding() {
 #[cfg(feature = "json-value")]
 #[test]
 fn test_json_encoding() {
+    use crate::buf::ValueBuf;
     use crate::encoding::Serde;
     use crate::json::Json;
-    use crate::buf::ValueBuf;
     let path = reset("json");
 
     // Create a new store
@@ -191,9 +223,9 @@ fn test_json_encoding() {
 #[cfg(feature = "bincode-value")]
 #[test]
 fn test_bincode_encoding() {
-    use crate::encoding::Serde;
     use crate::bincode::Bincode;
     use crate::buf::ValueBuf;
+    use crate::encoding::Serde;
     let path = reset("bincode");
 
     // Create a new store
@@ -204,11 +236,7 @@ fn test_bincode_encoding() {
 
     let mut txn = store.write_txn().unwrap();
     for i in 0..2 {
-        match txn.set_no_overwrite(
-            &bucket,
-            "testing",
-            Bincode::to_value_buf(12345).unwrap(),
-        ) {
+        match txn.set_no_overwrite(&bucket, "testing", Bincode::to_value_buf(12345).unwrap()) {
             Ok(_) => assert_eq!(i, 0),
             Err(_) => assert_eq!(i, 1),
         }
