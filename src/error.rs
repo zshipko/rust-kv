@@ -1,46 +1,46 @@
 use std::io;
 use std::sync::PoisonError;
 
-use failure::Fail;
 use lmdb;
+use thiserror::Error as TError;
 
-#[derive(Debug, Fail)]
+#[derive(Debug, TError)]
 /// Error type
 pub enum Error {
     /// An LMDB error
-    #[fail(display = "Error in LMDB: {}", _0)]
-    LMDB(#[cause] lmdb::Error),
+    #[error("Error in LMDB: {0}")]
+    LMDB(#[source] lmdb::Error),
 
     /// An IO error
-    #[fail(display = "IO error: {}", _0)]
-    IO(#[cause] io::Error),
+    #[error("IO error: {0}")]
+    IO(#[from] io::Error),
 
     /// A non-existant or invalid bucket was used
-    #[fail(display = "Requested bucket doesn't exist")]
+    #[error("Requested bucket doesn't exist")]
     InvalidBucket,
 
     /// A resource could not be found
-    #[fail(display = "Requested key doesn't exist")]
+    #[error("Requested key doesn't exist")]
     NotFound,
 
     /// A transaction is readonly but something tried to write to it
-    #[fail(display = "Cannot write in a ReadOnly transaction")]
+    #[error("Cannot write in a ReadOnly transaction")]
     ReadOnly,
 
     /// An encoding error
-    #[fail(display = "Could not encode or decode value")]
+    #[error("Could not encode or decode value")]
     InvalidEncoding,
 
     /// Configuration is invalid
-    #[fail(display = "Configuration is invalid")]
+    #[error("Configuration is invalid")]
     InvalidConfiguration,
 
     /// Directory doesn't exist
-    #[fail(display = "Directory doesn't exist")]
+    #[error("Directory doesn't exist")]
     DirectoryNotFound,
 
     /// RwLock is poisoned
-    #[fail(display = "RwLock is poisoned")]
+    #[error("RwLock is poisoned")]
     Poison,
 }
 
@@ -52,12 +52,6 @@ impl From<lmdb::Error> for Error {
             lmdb::Error::Other(2) => Error::DirectoryNotFound,
             _ => Error::LMDB(err),
         }
-    }
-}
-
-impl From<io::Error> for Error {
-    fn from(err: io::Error) -> Error {
-        Error::IO(err)
     }
 }
 
