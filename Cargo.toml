@@ -14,7 +14,7 @@ edition = "2018"
 all-features = true
 
 [dependencies]
-failure = "0.1"
+thiserror = "1.0.9"
 lmdb-rkv = "0.12"
 serde = {version = "1.0", features=["derive"]}
 toml = "0.5"
