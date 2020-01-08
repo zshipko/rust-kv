@@ -1,6 +1,6 @@
 [package]
 name = "kv"
-version = "0.9.3"
+version = "0.10.0"
 authors = ["Zach Shipko <zachshipko@gmail.com>"]
 license = "ISC"
 keywords = ["key-value-store", "database", "lmdb"]
@@ -14,7 +14,7 @@ edition = "2018"
 all-features = true
 
 [dependencies]
-thiserror = "1.0.9"
+thiserror = "1.0"
 lmdb-rkv = "0.12"
 serde = {version = "1.0", features=["derive"]}
 toml = "0.5"
