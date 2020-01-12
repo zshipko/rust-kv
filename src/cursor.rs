@@ -62,7 +62,7 @@ impl<'a, K: FromRawKey<'a>, V: Value<'a>> Iterator for Cursor<'a, K, V> {
             Some(Ok((k, v))) => (k, v),
             _ => return None,
         };
-        let k = match K::from_raw(k) {
+        let k = match K::from_raw_key(k) {
             Ok(k) => k,
             Err(_) => return None,
         };
@@ -77,7 +77,7 @@ impl<'a, K: FromRawKey<'a>, V: Value<'a>> Iterator for Iter<'a, K, V> {
             Some(Ok((k, v))) => (k, v),
             _ => return None,
         };
-        let k = match K::from_raw(k) {
+        let k = match K::from_raw_key(k) {
             Ok(k) => k,
             Err(_) => return None,
         };
