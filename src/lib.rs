@@ -51,9 +51,7 @@
 //!     }
 //!
 //!     {
-//!         // This time a readonly transaction
 //!         let txn = store.read_txn()?;
-//!         // Getting a value is easy once everything is set up
 //!         let mut curs = txn.read_cursor(&bucket)?;
 //!         let all: Vec<(String, String)> =
 //!            curs.map(|(k, v)| (k.to_string(), v.to_string())).collect();
