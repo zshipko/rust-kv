@@ -50,6 +50,16 @@
 //!         println!("testing => {}", val);
 //!     }
 //!
+//!     {
+//!         // This time a readonly transaction
+//!         let txn = store.read_txn()?;
+//!         // Getting a value is easy once everything is set up
+//!         let mut curs = txn.read_cursor(&bucket)?;
+//!         let all: Vec<(String, String)> =
+//!            curs.map(|(k, v)| (k.to_string(), v.to_string())).collect();
+//!         println!("{:?}", all);
+//!     }
+//!
 //!     Ok(())
 //! }
 //! #
@@ -87,4 +97,4 @@ pub use crate::error::Error;
 pub use crate::manager::Manager;
 pub use crate::store::{Bucket, Store};
 pub use crate::txn::Txn;
-pub use crate::types::{Integer, Key, Value, ValueMut, ValueRef};
+pub use crate::types::{FromRawKey, Integer, Key, Value, ValueMut, ValueRef};

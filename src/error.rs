@@ -42,6 +42,10 @@ pub enum Error {
     /// RwLock is poisoned
     #[error("RwLock is poisoned")]
     Poison,
+
+    /// UTF8 Error
+    #[error("UTF8 error")]
+    UTF8(std::str::Utf8Error),
 }
 
 impl From<lmdb::Error> for Error {
@@ -58,6 +62,12 @@ impl From<lmdb::Error> for Error {
 impl<T> From<PoisonError<T>> for Error {
     fn from(_: PoisonError<T>) -> Error {
         Error::Poison
+    }
+}
+
+impl From<std::str::Utf8Error> for Error {
+    fn from(e: std::str::Utf8Error) -> Error {
+        Error::UTF8(e)
     }
 }
 

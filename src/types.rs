@@ -1,7 +1,45 @@
 use std::{mem, str};
 
+use crate::Error;
+
 /// A Key can be used as a key to a database
 pub trait Key: AsRef<[u8]> {}
+
+/// Defines default conversions from &[u8] to other key types
+pub trait FromRawKey<'a>: Sized + Key {
+    /// Conversion function
+    fn from_raw(_: &'a [u8]) -> Result<Self, Error>;
+}
+
+impl<'a> FromRawKey<'a> for &'a [u8] {
+    fn from_raw(x: &'a [u8]) -> Result<&'a [u8], Error> {
+        Ok(x)
+    }
+}
+
+impl<'a> FromRawKey<'a> for &'a str {
+    fn from_raw(x: &'a [u8]) -> Result<&'a str, Error> {
+        Ok(std::str::from_utf8(x)?)
+    }
+}
+
+impl<'a> FromRawKey<'a> for Vec<u8> {
+    fn from_raw(x: &'a [u8]) -> Result<Self, Error> {
+        Ok(x.to_vec())
+    }
+}
+
+impl<'a> FromRawKey<'a> for String {
+    fn from_raw(x: &'a [u8]) -> Result<Self, Error> {
+        Ok(std::str::from_utf8(x)?.to_string())
+    }
+}
+
+impl<'a> FromRawKey<'a> for crate::Integer {
+    fn from_raw(x: &'a [u8]) -> Result<crate::Integer, Error> {
+        Ok(crate::Integer::from(x))
+    }
+}
 
 /// A Value can be stored in a database
 pub trait Value<'a>: AsRef<[u8]> {

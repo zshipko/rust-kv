@@ -4,7 +4,7 @@ use lmdb;
 use lmdb::Cursor as LMDBCursor;
 
 use crate::error::Error;
-use crate::types::{Key, Value};
+use crate::types::{FromRawKey, Key, Value};
 
 pub struct Hidden<A, B>(PhantomData<A>, PhantomData<B>);
 
@@ -53,17 +53,35 @@ pub enum Cursor<'a, K, V> {
 /// Iter wrapper
 pub struct Iter<'a, K, V>(lmdb::Iter<'a>, Hidden<K, V>);
 
-impl<'a, K: Key, V: Value<'a>> Iterator for Iter<'a, K, V>
-where
-    K: From<&'a [u8]>,
-{
+impl<'a, K: FromRawKey<'a>, V: Value<'a>> Iterator for Cursor<'a, K, V> {
+    type Item = (K, V);
+
+    fn next(&mut self) -> Option<(K, V)> {
+        let mut iter = self.iter_current();
+        let (k, v) = match lmdb::Iter::next(&mut iter.0) {
+            Some(Ok((k, v))) => (k, v),
+            _ => return None,
+        };
+        let k = match K::from_raw(k) {
+            Ok(k) => k,
+            Err(_) => return None,
+        };
+        Some((k, V::from_raw(v)))
+    }
+}
+
+impl<'a, K: FromRawKey<'a>, V: Value<'a>> Iterator for Iter<'a, K, V> {
     type Item = (K, V);
     fn next(&mut self) -> Option<(K, V)> {
         let (k, v) = match lmdb::Iter::next(&mut self.0) {
             Some(Ok((k, v))) => (k, v),
             _ => return None,
         };
-        Some((K::from(k), V::from_raw(v)))
+        let k = match K::from_raw(k) {
+            Ok(k) => k,
+            Err(_) => return None,
+        };
+        Some((k, V::from_raw(v)))
     }
 }
 
@@ -93,6 +111,16 @@ impl<'a, K: Key, V: Value<'a>> Cursor<'a, K, V> {
             Cursor::ReadWrite(ref mut rw) => {
                 Iter(rw.iter_start(), Hidden(PhantomData, PhantomData))
             }
+            Cursor::Phantom(_) => unreachable!(),
+        }
+    }
+
+    #[inline]
+    /// Iterate over all key/value pairs
+    pub fn iter_current(&mut self) -> Iter<'a, K, V> {
+        match self {
+            Cursor::ReadOnly(ref mut ro) => Iter(ro.iter(), Hidden(PhantomData, PhantomData)),
+            Cursor::ReadWrite(ref mut rw) => Iter(rw.iter(), Hidden(PhantomData, PhantomData)),
             Cursor::Phantom(_) => unreachable!(),
         }
     }
