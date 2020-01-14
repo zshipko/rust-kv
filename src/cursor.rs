@@ -116,7 +116,7 @@ impl<'a, K: Key, V: Value<'a>> Cursor<'a, K, V> {
     }
 
     #[inline]
-    /// Iterate over all key/value pairs
+    /// Iterate over key/value pairs starting at the current item
     pub fn iter_current(&mut self) -> Iter<'a, K, V> {
         match self {
             Cursor::ReadOnly(ref mut ro) => Iter(ro.iter(), Hidden(PhantomData, PhantomData)),
