@@ -7,9 +7,12 @@ use toml;
 
 /// Database Flags
 pub use lmdb::DatabaseFlags;
-use serde::{Deserialize, Serialize};
+
+/// Environment Flags
+pub use lmdb::EnvironmentFlags;
 
 use crate::error::Error;
+use serde::{Deserialize, Serialize};
 
 /// Bucket flag, used when creating/opening a bucket
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -20,7 +23,7 @@ pub enum Flag {
 }
 
 impl Flag {
-    pub(crate) fn database_flags(&self) -> lmdb::DatabaseFlags {
+    pub(crate) fn database_flags(&self) -> DatabaseFlags {
         match self {
             Flag::ReverseKey => DatabaseFlags::REVERSE_KEY,
             Flag::IntegerKey => DatabaseFlags::INTEGER_KEY,
@@ -56,7 +59,7 @@ impl Config {
         Config {
             map_size: 1024 * 1024 * 1024,
             max_readers: 5,
-            flags: lmdb::EnvironmentFlags::empty().bits(),
+            flags: EnvironmentFlags::empty().bits(),
             path: p.as_ref().to_path_buf(),
             readonly: false,
             buckets: HashMap::new(),
@@ -108,12 +111,12 @@ impl Config {
     }
 
     /// Get `flags` field (DatabaseFlags)
-    pub fn flags(&self) -> lmdb::EnvironmentFlags {
-        lmdb::EnvironmentFlags::from_bits(self.flags).unwrap()
+    pub fn flags(&self) -> EnvironmentFlags {
+        EnvironmentFlags::from_bits(self.flags).unwrap()
     }
 
     /// Set `flags` field (DatabaseFlags)
-    pub fn flag(&mut self, f: lmdb::EnvironmentFlags) -> &mut Config {
+    pub fn flag(&mut self, f: EnvironmentFlags) -> &mut Config {
         let mut flags = self.flags();
         flags.insert(f);
         self.flags = f.bits();
