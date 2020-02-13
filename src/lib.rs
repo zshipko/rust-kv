@@ -9,7 +9,7 @@
 //! ```rust
 //! use kv::*;
 //!
-//! #[derive(serde::Serialize, serde::Deserialize)]
+//! #[derive(serde::Serialize, serde::Deserialize, PartialEq)]
 //! struct SomeType {
 //!     a: i32,
 //!     b: i32
@@ -27,7 +27,7 @@
 //!
 //!     bucket.set("testing", "123")?;
 //!
-//!     let bucket = store.bucket::<&str, Buffer<Json<SomeType>>>(Some("test"))?;
+//!     let bucket = store.bucket::<&str, Buffer<Json<SomeType>>>(None)?;
 //!
 //!     let x = SomeType {a: 1, b: 2};
 //!
@@ -35,8 +35,11 @@
 //!
 //!     let x: SomeType = bucket.get("example")?.unwrap();
 //!
-//!     for x in bucket.iter() {
-//!         let (k, v) = x?;
+//!     for item in bucket.iter() {
+//!         let item = item?;
+//!         println!("{}", item.key().unwrap());
+//!         assert!(item.key().unwrap() == "example");
+//!         assert!(item.value::<SomeType>().unwrap() == x);
 //!
 //!     }
 //!

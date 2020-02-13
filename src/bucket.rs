@@ -1,6 +1,6 @@
 use std::marker::PhantomData;
 
-use crate::{Error, FromValue, Key, OwnedKey, ToValue, Value};
+use crate::{Error, FromValue, Integer, Key, Raw, ToValue, Value};
 
 /// Provides typed access to the key/value store
 pub struct Bucket<'a, K: Key, V: Value<'a>>(
@@ -10,31 +10,67 @@ pub struct Bucket<'a, K: Key, V: Value<'a>>(
     PhantomData<&'a ()>,
 );
 
+pub struct Item<K, V>((Raw, Raw), PhantomData<K>, PhantomData<V>);
+
+impl<'a, K, V: Value<'a>> Item<K, V> {
+    /// Get the value associated with the specified key
+    pub fn value<T: FromValue<V>>(self) -> Result<T, Error> {
+        let x = V::from_raw_value((self.0).1)?;
+        let x = T::from_value(x)?;
+        Ok(x)
+    }
+}
+
+impl<'a, V: Value<'a>> Item<&str, V> {
+    /// Get the value associated with the specified key
+    pub fn key(&self) -> Result<&str, Error> {
+        Ok(std::str::from_utf8((self.0).0.as_ref())?)
+    }
+}
+
+impl<'a, V: Value<'a>> Item<String, V> {
+    /// Get the value associated with the specified key
+    pub fn key(&self) -> Result<String, Error> {
+        Ok(std::str::from_utf8((self.0).0.as_ref())?.to_string())
+    }
+}
+
+impl<'a, V: Value<'a>> Item<&[u8], V> {
+    /// Get the value associated with the specified key
+    pub fn key(&self) -> Result<&[u8], Error> {
+        Ok((self.0).0.as_ref())
+    }
+}
+
+impl<'a, V: Value<'a>> Item<Integer, V> {
+    /// Get the value associated with the specified key
+    pub fn key(&self) -> Result<Integer, Error> {
+        Ok(Integer::from((self.0).0.as_ref()))
+    }
+}
+
+impl<'a, V: Value<'a>> Item<Raw, V> {
+    /// Get the value associated with the specified key
+    pub fn key(&self) -> Result<&Raw, Error> {
+        Ok(&(self.0).0)
+    }
+}
+
 /// Iterator over Bucket keys and values
 pub struct Iter<K, V>(sled::Iter, PhantomData<K>, PhantomData<V>);
 
 impl<'a, K, V> Iterator for Iter<K, V>
 where
-    K: OwnedKey<'a>,
+    K: Key,
     V: Value<'a>,
 {
-    type Item = Result<(K, V), Error>;
+    type Item = Result<Item<K, V>, Error>;
 
     fn next(&mut self) -> Option<Self::Item> {
         match self.0.next() {
             None => None,
             Some(Err(e)) => Some(Err(e.into())),
-            Some(Ok((k, v))) => {
-                let k = match OwnedKey::from_raw_key(k) {
-                    Ok(k) => k,
-                    Err(e) => return Some(Err(e)),
-                };
-                let v = match Value::from_raw_value(v) {
-                    Ok(v) => v,
-                    Err(e) => return Some(Err(e)),
-                };
-                Some(Ok((k, v)))
-            }
+            Some(Ok((k, v))) => Some(Ok(Item((k, v), PhantomData, PhantomData))),
         }
     }
 }
