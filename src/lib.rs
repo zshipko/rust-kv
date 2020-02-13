@@ -35,6 +35,11 @@
 //!
 //!     let x: SomeType = bucket.get("example")?.unwrap();
 //!
+//!     for x in bucket.iter() {
+//!         let (k, v) = x?;
+//!
+//!     }
+//!
 //!
 //!     Ok(())
 //! }
@@ -51,7 +56,7 @@ mod store;
 mod types;
 mod value;
 
-pub use bucket::Bucket;
+pub use bucket::{Bucket, Iter};
 pub use config::Config;
 pub use error::Error;
 pub use store::Store;

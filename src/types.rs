@@ -4,13 +4,13 @@ use std::{mem, str};
 use crate::Error;
 
 /// A Key can be used as a key to a database
-pub trait Key: Sized {
+pub trait Key {
     /// Convert to Raw
     fn to_raw_key(self) -> Raw;
 }
 
 /// An OwnedKey is used to take ownership of a Raw
-pub trait OwnedKey<'a>: 'a + Key {
+pub trait OwnedKey<'a>: 'a + Sized + Key {
     /// Convert from Raw
     fn from_raw_key(r: Raw) -> Result<Self, Error>;
 }
@@ -53,7 +53,7 @@ impl<'a> Key for Integer {
 
 impl<'a> OwnedKey<'a> for Raw {
     fn from_raw_key(x: Raw) -> Result<Raw, Error> {
-        Ok(x)
+        Ok(x.clone())
     }
 }
 

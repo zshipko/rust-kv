@@ -1,6 +1,6 @@
 use std::marker::PhantomData;
 
-use crate::{Error, FromValue, Key, ToValue, Value};
+use crate::{Error, FromValue, Key, OwnedKey, ToValue, Value};
 
 /// Provides typed access to the key/value store
 pub struct Bucket<'a, K: Key, V: Value<'a>>(
@@ -9,6 +9,35 @@ pub struct Bucket<'a, K: Key, V: Value<'a>>(
     PhantomData<V>,
     PhantomData<&'a ()>,
 );
+
+/// Iterator over Bucket keys and values
+pub struct Iter<K, V>(sled::Iter, PhantomData<K>, PhantomData<V>);
+
+impl<'a, K, V> Iterator for Iter<K, V>
+where
+    K: OwnedKey<'a>,
+    V: Value<'a>,
+{
+    type Item = Result<(K, V), Error>;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        match self.0.next() {
+            None => None,
+            Some(Err(e)) => Some(Err(e.into())),
+            Some(Ok((k, v))) => {
+                let k = match OwnedKey::from_raw_key(k) {
+                    Ok(k) => k,
+                    Err(e) => return Some(Err(e)),
+                };
+                let v = match Value::from_raw_value(v) {
+                    Ok(v) => v,
+                    Err(e) => return Some(Err(e)),
+                };
+                Some(Ok((k, v)))
+            }
+        }
+    }
+}
 
 impl<'a, K: Key, V: Value<'a>> Bucket<'a, K, V> {
     pub(crate) fn new(t: sled::Tree) -> Bucket<'a, K, V> {
@@ -40,5 +69,10 @@ impl<'a, K: Key, V: Value<'a>> Bucket<'a, K, V> {
     pub fn remove(&self, key: K) -> Result<(), Error> {
         self.0.remove(key.to_raw_key())?;
         Ok(())
+    }
+
+    /// Get an iterator over keys/values
+    pub fn iter(&self) -> Iter<K, V> {
+        Iter(self.0.iter(), PhantomData, PhantomData)
     }
 }
