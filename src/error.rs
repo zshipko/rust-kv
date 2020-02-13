@@ -53,6 +53,26 @@ pub enum Error {
     /// Generic message
     #[error("Message: {0}")]
     Message(String),
+
+    /// Json error
+    #[cfg(feature = "json-value")]
+    #[error("JSON error: {0}")]
+    Json(#[from] serde_json::Error),
+
+    /// Msgpack encoding error
+    #[cfg(feature = "msgpack-value")]
+    #[error("Msgpack encoding error: {0}")]
+    MsgpackEncode(#[from] rmp_serde::encode::Error),
+
+    /// Msgpack decoding error
+    #[cfg(feature = "msgpack-value")]
+    #[error("Msgpack decoding error: {0}")]
+    MsgpackDecode(#[from] rmp_serde::decode::Error),
+
+    /// Bincode error
+    #[cfg(feature = "msgpack-value")]
+    #[error("Msgpack encoding Error: {0}")]
+    Bincode(#[from] Box<bincode::ErrorKind>),
 }
 
 impl<T> From<PoisonError<T>> for Error {

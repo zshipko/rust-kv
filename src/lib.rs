@@ -7,7 +7,13 @@
 //! ## Getting started
 //!
 //! ```rust
-//! use kv::{Config, Error, Store, Raw};
+//! use kv::*;
+//!
+//! #[derive(serde::Serialize, serde::Deserialize)]
+//! struct SomeType {
+//!     a: i32,
+//!     b: i32
+//! }
 //!
 //! fn run() -> Result<(), Error> {
 //!     // Configure the database
@@ -16,10 +22,19 @@
 //!     // Open the key/value store
 //!     let store = Store::new(cfg)?;
 //!
-//!     // A Bucket provides typed access to an LMDB database
-//!     let bucket = store.bucket::<&str, Raw>("test")?;
+//!     // A Bucket provides typed access to a section of the key/value store
+//!     let bucket = store.bucket::<&str, Raw>(Some("test"))?;
 //!
 //!     bucket.set("testing", "123")?;
+//!
+//!     let bucket = store.bucket::<&str, Buffer<Json<SomeType>>>(Some("test"))?;
+//!
+//!     let x = SomeType {a: 1, b: 2};
+//!
+//!     bucket.set("example", Json(&x))?;
+//!
+//!     let x: SomeType = bucket.get("example")?.unwrap();
+//!
 //!
 //!     Ok(())
 //! }
@@ -34,12 +49,14 @@ mod config;
 mod error;
 mod store;
 mod types;
+mod value;
 
 pub use bucket::Bucket;
 pub use config::Config;
 pub use error::Error;
 pub use store::Store;
-pub use types::{Integer, Key, OwnedKey, Raw, Value};
+pub use types::{Buffer, FromValue, Integer, Key, OwnedKey, Raw, ToValue, Value};
+pub use value::*;
 
 #[cfg(test)]
 mod tests {

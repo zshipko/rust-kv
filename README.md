@@ -8,12 +8,10 @@ An embedded key/value store for Rust built on [sled](https://docs.rs/sled)
 
 - Easy configuration
 - Integer keys
-- Serde integration (see the Encoding trait)
+- Serde integration
 
 ## Optional features
 
-* `cbor-value`
-    - CBOR value encoding using `serde`
 * `msgpack-value`
     - MessagePack encoding using `serde`
 * `json-value`
