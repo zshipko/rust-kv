@@ -88,6 +88,7 @@ impl Config {
 
     pub(crate) fn open(&mut self) -> Result<sled::Db, Error> {
         let config = sled::Config::new()
+            .path(&self.path)
             .read_only(self.read_only)
             .temporary(self.temporary)
             .use_compression(self.use_compression);

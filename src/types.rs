@@ -1,75 +1,51 @@
-use std::marker::PhantomData;
-use std::{mem, str};
+use std::mem;
 
 use crate::Error;
 
 /// A Key can be used as a key to a database
-pub trait Key {
+pub trait Key: Sized {
     /// Convert to Raw
-    fn to_raw_key(self) -> Raw;
-}
+    fn to_raw_key(&self) -> Result<Raw, Error>;
 
-/// An OwnedKey is used to take ownership of a Raw
-pub trait OwnedKey<'a>: 'a + Sized + Key {
     /// Convert from Raw
     fn from_raw_key(r: Raw) -> Result<Self, Error>;
 }
 
 impl Key for Raw {
-    fn to_raw_key(self) -> Raw {
-        self
+    fn to_raw_key(&self) -> Result<Raw, Error> {
+        Ok(self.clone())
     }
-}
 
-impl<'a> Key for &'a [u8] {
-    fn to_raw_key(self) -> Raw {
-        self.into()
-    }
-}
-
-impl<'a> Key for &'a str {
-    fn to_raw_key(self) -> Raw {
-        self.into()
-    }
-}
-
-impl<'a> Key for Vec<u8> {
-    fn to_raw_key(self) -> Raw {
-        self.into()
-    }
-}
-
-impl<'a> Key for String {
-    fn to_raw_key(self) -> Raw {
-        self.as_str().into()
-    }
-}
-
-impl<'a> Key for Integer {
-    fn to_raw_key(self) -> Raw {
-        self.as_ref().into()
-    }
-}
-
-impl<'a> OwnedKey<'a> for Raw {
     fn from_raw_key(x: Raw) -> Result<Raw, Error> {
-        Ok(x.clone())
+        Ok(x)
     }
 }
 
-impl<'a> OwnedKey<'a> for Vec<u8> {
-    fn from_raw_key(x: Raw) -> Result<Self, Error> {
-        Ok(x.to_vec())
+impl Key for Vec<u8> {
+    fn to_raw_key(&self) -> Result<Raw, Error> {
+        Ok(self.as_slice().into())
+    }
+
+    fn from_raw_key(r: Raw) -> Result<Self, Error> {
+        Ok(r.to_vec())
     }
 }
 
-impl<'a> OwnedKey<'a> for String {
+impl Key for String {
+    fn to_raw_key(&self) -> Result<Raw, Error> {
+        Ok(self.as_str().into())
+    }
+
     fn from_raw_key(x: Raw) -> Result<Self, Error> {
         Ok(std::str::from_utf8(x.as_ref())?.to_string())
     }
 }
 
-impl<'a> OwnedKey<'a> for Integer {
+impl Key for Integer {
+    fn to_raw_key(&self) -> Result<Raw, Error> {
+        Ok(self.as_ref().into())
+    }
+
     fn from_raw_key(x: Raw) -> Result<Integer, Error> {
         Ok(Integer::from(x.as_ref()))
     }
@@ -112,94 +88,44 @@ impl<'a> From<&'a [u8]> for Integer {
 }
 
 /// A trait used to convert between types and `Raw`
-pub trait Value<'a>: 'a + Sized {
+pub trait Value: Sized {
     /// Convert to Raw
-    fn to_raw_value(self) -> Raw;
+    fn to_raw_value(&self) -> Result<Raw, Error>;
 
     /// Convert from Raw
-    fn from_raw_value(r: Raw) -> Result<Self, Error>;
+    fn from_raw_value(r: &Raw) -> Result<Self, Error>;
 }
 
 /// Raw is an alias for `sled::IVec`
 pub type Raw = sled::IVec;
 
-impl<'a> Value<'a> for Raw {
-    fn to_raw_value(self) -> Raw {
-        self
+impl Value for Raw {
+    fn to_raw_value(&self) -> Result<Raw, Error> {
+        Ok(self.clone())
     }
 
-    fn from_raw_value(r: Raw) -> Result<Self, Error> {
-        Ok(r)
+    fn from_raw_value(r: &Raw) -> Result<Self, Error> {
+        Ok(r.clone())
     }
 }
 
-impl<'a> Value<'a> for Vec<u8> {
-    fn to_raw_value(self) -> Raw {
-        self.into()
+impl Value for Vec<u8> {
+    fn to_raw_value(&self) -> Result<Raw, Error> {
+        Ok(self.as_slice().into())
     }
 
-    fn from_raw_value(r: Raw) -> Result<Self, Error> {
+    fn from_raw_value(r: &Raw) -> Result<Self, Error> {
         Ok(r.to_vec())
     }
 }
 
-impl<'a> Value<'a> for String {
-    fn to_raw_value(self) -> Raw {
-        self.as_str().into()
+impl Value for String {
+    fn to_raw_value(&self) -> Result<Raw, Error> {
+        Ok(self.as_str().into())
     }
 
-    fn from_raw_value(r: Raw) -> Result<Self, Error> {
-        let x: std::sync::Arc<[u8]> = r.into();
-        Ok(String::from_utf8(x.to_vec())?)
-    }
-}
-
-/// Buffer provides a value implementation using an owned buffer
-pub struct Buffer<T>(Vec<u8>, PhantomData<T>);
-
-/// ToValue is definted for types that can be converted to `Value` with potential errors
-pub trait ToValue<V> {
-    /// Convert to a value type
-    fn to_value(self) -> Result<V, Error>;
-}
-
-impl<'a, T: Value<'a>, X: Into<T>> ToValue<T> for X {
-    fn to_value(self) -> Result<T, Error> {
-        Ok(self.into())
-    }
-}
-
-/// FromValue is defined for types that can be converted from `Value` with potential errors
-pub trait FromValue<V>: Sized {
-    /// Convert from value type
-    fn from_value(v: V) -> Result<Self, Error>;
-}
-
-/*impl<'a, T: Value<'a>, X: From<T>> FromValue<T> for X {
-    fn from_value(v: T) -> Result<Self, Error> {
-        Ok(v.into())
-    }
-}*/
-
-impl<T> Buffer<T> {
-    /// Create a new Buffer from an existing buffer
-    pub fn new(data: Vec<u8>) -> Buffer<T> {
-        Buffer(data, PhantomData)
-    }
-}
-
-impl<'a, T: 'a> Value<'a> for Buffer<T> {
-    fn to_raw_value(self) -> Raw {
-        self.0.into()
-    }
-
-    fn from_raw_value(r: Raw) -> Result<Self, Error> {
-        Ok(Buffer(r.to_vec(), PhantomData))
-    }
-}
-
-impl<T> AsRef<[u8]> for Buffer<T> {
-    fn as_ref(&self) -> &[u8] {
-        self.0.as_ref()
+    fn from_raw_value(r: &Raw) -> Result<Self, Error> {
+        let x = r.to_vec();
+        Ok(String::from_utf8(x)?)
     }
 }

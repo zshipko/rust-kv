@@ -23,24 +23,24 @@
 //!     let store = Store::new(cfg)?;
 //!
 //!     // A Bucket provides typed access to a section of the key/value store
-//!     let bucket = store.bucket::<&str, Raw>(Some("test"))?;
+//!     let bucket = store.bucket::<Raw, String>(Some("test"))?;
 //!
-//!     bucket.set("testing", "123")?;
+//!     // Set testing = 123
+//!     bucket.set(b"testing", "123")?;
 //!
-//!     let bucket = store.bucket::<&str, Buffer<Json<SomeType>>>(None)?;
+//!     let bucket = store.bucket::<String, Json<SomeType>>(None)?;
 //!
 //!     let x = SomeType {a: 1, b: 2};
 //!
-//!     bucket.set("example", Json(&x))?;
+//!     bucket.set("example", Json(x))?;
 //!
-//!     let x: SomeType = bucket.get("example")?.unwrap();
+//!     let x: Json<SomeType> = bucket.get("example")?.unwrap();
 //!
 //!     for item in bucket.iter() {
 //!         let item = item?;
-//!         println!("{}", item.key().unwrap());
-//!         assert!(item.key().unwrap() == "example");
-//!         assert!(item.value::<SomeType>().unwrap() == x);
-//!
+//!         let key: String = item.key()?;
+//!         let value = item.value::<Json<SomeType>>()?;
+//!         println!("key: {}, value: {}", key, value);
 //!     }
 //!
 //!
@@ -59,17 +59,12 @@ mod store;
 mod types;
 mod value;
 
-pub use bucket::{Bucket, Iter};
+pub use bucket::{Batch, Bucket, Iter};
 pub use config::Config;
 pub use error::Error;
 pub use store::Store;
-pub use types::{Buffer, FromValue, Integer, Key, OwnedKey, Raw, ToValue, Value};
+pub use types::{Integer, Key, Raw, Value};
 pub use value::*;
 
 #[cfg(test)]
-mod tests {
-    #[test]
-    fn it_works() {
-        assert_eq!(2 + 2, 4);
-    }
-}
+mod tests;

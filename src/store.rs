@@ -23,10 +23,7 @@ impl Store {
     }
 
     /// Open a new bucket
-    pub fn bucket<'a, K: Key, V: Value<'a>>(
-        &self,
-        name: Option<&str>,
-    ) -> Result<Bucket<'a, K, V>, Error> {
+    pub fn bucket<K: Key, V: Value>(&self, name: Option<&str>) -> Result<Bucket<K, V>, Error> {
         let t = self.db.open_tree(name.unwrap_or("__sled__default"))?;
         Ok(Bucket::new(t))
     }
