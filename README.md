@@ -4,13 +4,13 @@
     <img src="https://img.shields.io/crates/v/kv.svg">
 </a>
 
-Note: `kv 0.20` has been completely re-written to use [sled](https://docs.rs/sled) instead of LMDB. This helped simplify the API a lot!
-
 An embedded key/value store for Rust built on [sled](https://docs.rs/sled)
 
 - Easy configuration
 - Integer keys
 - Serde integration
+
+Note: `kv` `0.20` and greater have been completely re-written to use [sled](https://docs.rs/sled) instead of LMDB, in the process the entire API has been rewritten.
 
 ## Optional features
 
