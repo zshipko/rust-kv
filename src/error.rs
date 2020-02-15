@@ -14,17 +14,9 @@ pub enum Error {
     #[error("IO error: {0}")]
     IO(#[from] io::Error),
 
-    /// An encoding error
-    #[error("Could not encode or decode value")]
-    InvalidEncoding,
-
     /// Configuration is invalid
     #[error("Configuration is invalid")]
     InvalidConfiguration,
-
-    /// Directory doesn't exist
-    #[error("Directory doesn't exist")]
-    DirectoryNotFound,
 
     /// RwLock is poisoned
     #[error("RwLock is poisoned")]
@@ -78,5 +70,11 @@ impl From<std::str::Utf8Error> for Error {
 impl From<std::string::FromUtf8Error> for Error {
     fn from(e: std::string::FromUtf8Error) -> Error {
         Error::FromUtf8(e)
+    }
+}
+
+impl From<Error> for sled::ConflictableTransactionError<Error> {
+    fn from(e: Error) -> sled::ConflictableTransactionError<Error> {
+        sled::ConflictableTransactionError::Abort(e)
     }
 }
