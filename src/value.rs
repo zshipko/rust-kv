@@ -1,20 +1,54 @@
 use crate::{Error, Raw, Value};
 
+/// Base trait for shared functionality
+pub trait Codec<'a, T>: Value<'a> {
+    /// Get a reference to inner value
+    fn inner(&self) -> &T;
+
+    /// Get a mutable reference to inner value
+    fn inner_mut(&mut self) -> &mut T;
+
+    /// Convert back into inner value
+    fn into_inner(self) -> T;
+}
+
+#[macro_export]
+/// Define a codec type and implement the Codec trait
+macro_rules! codec {
+    ($x:ident) => {
+        /// $x encoding
+        pub struct $x<T: serde::Serialize + serde::de::DeserializeOwned>(pub T);
+
+        impl<'a, T: 'a + serde::Serialize + serde::de::DeserializeOwned> Codec<'a, T> for $x<T> {
+            fn inner(&self) -> &T {
+                &self.0
+            }
+
+            fn inner_mut(&mut self) -> &mut T {
+                &mut self.0
+            }
+
+            fn into_inner(self) -> T {
+                self.0
+            }
+        }
+    };
+}
+
 #[cfg(feature = "msgpack-value")]
 mod msgpack_value {
     use super::*;
 
-    /// Msgpack encoding for any serde-compatible type
-    pub struct Msgpack<T: serde::Serialize + serde::de::DeserializeOwned>(pub T);
+    codec!(Msgpack);
 
-    impl<T: serde::Serialize + serde::de::DeserializeOwned> Value for Msgpack<T> {
+    impl<'a, T: 'a + serde::Serialize + serde::de::DeserializeOwned> Value<'a> for Msgpack<T> {
         fn to_raw_value(&self) -> Result<Raw, Error> {
             let x = rmp_serde::to_vec(&self.0)?;
             Ok(x.into())
         }
 
-        fn from_raw_value(r: &Raw) -> Result<Self, Error> {
-            let x = rmp_serde::from_slice(r)?;
+        fn from_raw_value(r: Raw) -> Result<Self, Error> {
+            let x = rmp_serde::from_slice(&r)?;
             Ok(Msgpack(x))
         }
     }
@@ -24,17 +58,16 @@ mod msgpack_value {
 mod json_value {
     use super::*;
 
-    /// JSON encoding for any serde-compatible type
-    pub struct Json<T: serde::Serialize + serde::de::DeserializeOwned>(pub T);
+    codec!(Json);
 
-    impl<T: serde::Serialize + serde::de::DeserializeOwned> Value for Json<T> {
+    impl<'a, T: 'a + serde::Serialize + serde::de::DeserializeOwned> Value<'a> for Json<T> {
         fn to_raw_value(&self) -> Result<Raw, Error> {
             let x = serde_json::to_vec(&self.0)?;
             Ok(x.into())
         }
 
-        fn from_raw_value(r: &Raw) -> Result<Self, Error> {
-            let x = serde_json::from_slice(r)?;
+        fn from_raw_value(r: Raw) -> Result<Self, Error> {
+            let x = serde_json::from_slice(&r)?;
             Ok(Json(x))
         }
     }
@@ -55,17 +88,16 @@ mod json_value {
 mod bincode_value {
     use super::*;
 
-    /// Bincode encoding for any serde-compatible type
-    pub struct Bincode<T: serde::Serialize + serde::de::DeserializeOwned>(pub T);
+    codec!(Bincode);
 
-    impl<T: serde::Serialize + serde::de::DeserializeOwned> Value for Bincode<T> {
+    impl<'a, T: 'a + serde::Serialize + serde::de::DeserializeOwned> Value<'a> for Bincode<T> {
         fn to_raw_value(&self) -> Result<Raw, Error> {
             let x = bincode::serialize(&self.0)?;
             Ok(x.into())
         }
 
-        fn from_raw_value(r: &Raw) -> Result<Self, Error> {
-            let x = bincode::deserialize(r)?;
+        fn from_raw_value(r: Raw) -> Result<Self, Error> {
+            let x = bincode::deserialize(&r)?;
             Ok(Bincode(x))
         }
     }

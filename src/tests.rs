@@ -15,7 +15,7 @@ fn test_basic() {
     // Create a new store
     let cfg = Config::new(path.clone());
     let store = Store::new(cfg).unwrap();
-    let bucket = store.bucket::<String, String>(None).unwrap();
+    let bucket = store.bucket::<&str, String>(None).unwrap();
     assert!(path::Path::new(path.as_str()).exists());
 
     bucket.set("testing", "abc123").unwrap();

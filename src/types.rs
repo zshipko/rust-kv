@@ -3,50 +3,48 @@ use std::mem;
 use crate::Error;
 
 /// A Key can be used as a key to a database
-pub trait Key: Sized {
-    /// Convert to Raw
-    fn to_raw_key(&self) -> Result<Raw, Error>;
-
+pub trait Key<'a>: Sized + AsRef<[u8]> {
     /// Convert from Raw
-    fn from_raw_key(r: Raw) -> Result<Self, Error>;
-}
+    fn from_raw_key(r: &'a Raw) -> Result<Self, Error>;
 
-impl Key for Raw {
+    /// Wrapper around AsRef<[u8]>
     fn to_raw_key(&self) -> Result<Raw, Error> {
-        Ok(self.clone())
-    }
-
-    fn from_raw_key(x: Raw) -> Result<Raw, Error> {
-        Ok(x)
+        Ok(self.as_ref().into())
     }
 }
 
-impl Key for Vec<u8> {
-    fn to_raw_key(&self) -> Result<Raw, Error> {
-        Ok(self.as_slice().into())
+impl<'a> Key<'a> for Raw {
+    fn from_raw_key(x: &Raw) -> Result<Self, Error> {
+        Ok(x.clone())
     }
+}
 
-    fn from_raw_key(r: Raw) -> Result<Self, Error> {
+impl<'a> Key<'a> for &'a [u8] {
+    fn from_raw_key(x: &'a Raw) -> Result<&'a [u8], Error> {
+        Ok(x.as_ref())
+    }
+}
+
+impl<'a> Key<'a> for &'a str {
+    fn from_raw_key(x: &'a Raw) -> Result<Self, Error> {
+        Ok(std::str::from_utf8(x.as_ref())?)
+    }
+}
+
+impl<'a> Key<'a> for Vec<u8> {
+    fn from_raw_key(r: &Raw) -> Result<Self, Error> {
         Ok(r.to_vec())
     }
 }
 
-impl Key for String {
-    fn to_raw_key(&self) -> Result<Raw, Error> {
-        Ok(self.as_str().into())
-    }
-
-    fn from_raw_key(x: Raw) -> Result<Self, Error> {
+impl<'a> Key<'a> for String {
+    fn from_raw_key(x: &Raw) -> Result<Self, Error> {
         Ok(std::str::from_utf8(x.as_ref())?.to_string())
     }
 }
 
-impl Key for Integer {
-    fn to_raw_key(&self) -> Result<Raw, Error> {
-        Ok(self.as_ref().into())
-    }
-
-    fn from_raw_key(x: Raw) -> Result<Integer, Error> {
+impl<'a> Key<'a> for Integer {
+    fn from_raw_key(x: &Raw) -> Result<Integer, Error> {
         Ok(Integer::from(x.as_ref()))
     }
 }
@@ -88,43 +86,53 @@ impl<'a> From<&'a [u8]> for Integer {
 }
 
 /// A trait used to convert between types and `Raw`
-pub trait Value: Sized {
-    /// Convert to Raw
+pub trait Value<'a>: 'a + Sized {
+    /// Wrapper around AsRef<[u8]>
     fn to_raw_value(&self) -> Result<Raw, Error>;
 
     /// Convert from Raw
-    fn from_raw_value(r: &Raw) -> Result<Self, Error>;
+    fn from_raw_value(r: Raw) -> Result<Self, Error>;
 }
 
 /// Raw is an alias for `sled::IVec`
 pub type Raw = sled::IVec;
 
-impl Value for Raw {
+impl<'a> Value<'a> for Raw {
     fn to_raw_value(&self) -> Result<Raw, Error> {
         Ok(self.clone())
     }
 
-    fn from_raw_value(r: &Raw) -> Result<Self, Error> {
-        Ok(r.clone())
+    fn from_raw_value(r: Raw) -> Result<Self, Error> {
+        Ok(r)
     }
 }
 
-impl Value for Vec<u8> {
+impl<'a> Value<'a> for std::sync::Arc<[u8]> {
+    fn to_raw_value(&self) -> Result<Raw, Error> {
+        Ok(self.clone().into())
+    }
+
+    fn from_raw_value(r: Raw) -> Result<Self, Error> {
+        Ok(r.into())
+    }
+}
+
+impl<'a> Value<'a> for Vec<u8> {
     fn to_raw_value(&self) -> Result<Raw, Error> {
         Ok(self.as_slice().into())
     }
 
-    fn from_raw_value(r: &Raw) -> Result<Self, Error> {
+    fn from_raw_value(r: Raw) -> Result<Self, Error> {
         Ok(r.to_vec())
     }
 }
 
-impl Value for String {
+impl<'a> Value<'a> for String {
     fn to_raw_value(&self) -> Result<Raw, Error> {
         Ok(self.as_str().into())
     }
 
-    fn from_raw_value(r: &Raw) -> Result<Self, Error> {
+    fn from_raw_value(r: Raw) -> Result<Self, Error> {
         let x = r.to_vec();
         Ok(String::from_utf8(x)?)
     }

@@ -23,19 +23,20 @@
 //!     let store = Store::new(cfg)?;
 //!
 //!     // A Bucket provides typed access to a section of the key/value store
-//!     let bucket = store.bucket::<Raw, String>(Some("test"))?;
+//!     let test = store.bucket::<Raw, String>(Some("test"))?;
 //!
 //!     // Set testing = 123
-//!     bucket.set(b"testing", "123")?;
+//!     test.set(b"test", "123")?;
+//!     assert!(test.get(b"test").unwrap().unwrap() == "123");
+//!     assert!(test.get(b"something else").unwrap() == None);
 //!
-//!     let bucket = store.bucket::<String, Json<SomeType>>(None)?;
+//!     // Using a Json encoded type is easy, thanks to Serde
+//!     let bucket = store.bucket::<&str, Json<SomeType>>(None)?;
 //!
 //!     let x = SomeType {a: 1, b: 2};
-//!
 //!     bucket.set("example", Json(x))?;
 //!
 //!     let x: Json<SomeType> = bucket.get("example")?.unwrap();
-//!
 //!     for item in bucket.iter() {
 //!         let item = item?;
 //!         let key: String = item.key()?;
