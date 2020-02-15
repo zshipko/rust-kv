@@ -3,7 +3,7 @@ use std::marker::PhantomData;
 use crate::{Error, Key, Raw, Value};
 
 /// Provides typed access to the key/value store
-pub struct Bucket<'a, K: Key<'a>, V: Value<'a>>(
+pub struct Bucket<'a, K: Key<'a>, V: Value>(
     pub(crate) sled::Tree,
     PhantomData<K>,
     PhantomData<V>,
@@ -12,7 +12,7 @@ pub struct Bucket<'a, K: Key<'a>, V: Value<'a>>(
 
 pub struct Item<K, V>((Raw, Raw), PhantomData<K>, PhantomData<V>);
 
-impl<'a, K: Key<'a>, V: Value<'a>> Item<K, V> {
+impl<'a, K: Key<'a>, V: Value> Item<K, V> {
     /// Get the value associated with the specified key
     pub fn value<T: From<V>>(&'a self) -> Result<T, Error> {
         let x = V::from_raw_value((self.0).1.clone())?;
@@ -35,7 +35,7 @@ pub struct Iter<K, V>(sled::Iter, PhantomData<K>, PhantomData<V>);
 impl<'a, K, V> Iterator for Iter<K, V>
 where
     K: Key<'a>,
-    V: Value<'a>,
+    V: Value,
 {
     type Item = Result<Item<K, V>, Error>;
 
@@ -51,7 +51,7 @@ where
 impl<'a, K, V> DoubleEndedIterator for Iter<K, V>
 where
     K: Key<'a>,
-    V: Value<'a>,
+    V: Value,
 {
     fn next_back(&mut self) -> Option<Self::Item> {
         match self.0.next_back() {
@@ -62,7 +62,7 @@ where
     }
 }
 
-impl<'a, K: Key<'a>, V: Value<'a>> Bucket<'a, K, V> {
+impl<'a, K: Key<'a>, V: Value> Bucket<'a, K, V> {
     pub(crate) fn new(t: sled::Tree) -> Bucket<'a, K, V> {
         Bucket(t, PhantomData, PhantomData, PhantomData)
     }
@@ -118,7 +118,7 @@ impl<'a, K: Key<'a>, V: Value<'a>> Bucket<'a, K, V> {
 /// Batch update
 pub struct Batch<K, V>(sled::Batch, PhantomData<K>, PhantomData<V>);
 
-impl<'a, K: Key<'a>, V: Value<'a>> Batch<K, V> {
+impl<'a, K: Key<'a>, V: Value> Batch<K, V> {
     /// Set the value associated with the specified key to the provided value
     pub fn set<X: Into<K>>(&mut self, key: X, value: &V) -> Result<(), Error> {
         let v = value.to_raw_value()?;

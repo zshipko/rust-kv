@@ -1,7 +1,7 @@
 use crate::{Error, Raw, Value};
 
 /// Base trait for shared functionality
-pub trait Codec<'a, T>: Value<'a> {
+pub trait Codec<T>: Value {
     /// Get a reference to inner value
     fn inner(&self) -> &T;
 
@@ -19,7 +19,7 @@ macro_rules! codec {
         /// $x encoding
         pub struct $x<T: serde::Serialize + serde::de::DeserializeOwned>(pub T);
 
-        impl<'a, T: 'a + serde::Serialize + serde::de::DeserializeOwned> Codec<'a, T> for $x<T> {
+        impl<T: serde::Serialize + serde::de::DeserializeOwned> Codec<T> for $x<T> {
             fn inner(&self) -> &T {
                 &self.0
             }
@@ -41,7 +41,7 @@ mod msgpack_value {
 
     codec!(Msgpack);
 
-    impl<'a, T: 'a + serde::Serialize + serde::de::DeserializeOwned> Value<'a> for Msgpack<T> {
+    impl<T: serde::Serialize + serde::de::DeserializeOwned> Value for Msgpack<T> {
         fn to_raw_value(&self) -> Result<Raw, Error> {
             let x = rmp_serde::to_vec(&self.0)?;
             Ok(x.into())
@@ -60,7 +60,7 @@ mod json_value {
 
     codec!(Json);
 
-    impl<'a, T: 'a + serde::Serialize + serde::de::DeserializeOwned> Value<'a> for Json<T> {
+    impl<T: serde::Serialize + serde::de::DeserializeOwned> Value for Json<T> {
         fn to_raw_value(&self) -> Result<Raw, Error> {
             let x = serde_json::to_vec(&self.0)?;
             Ok(x.into())
@@ -90,7 +90,7 @@ mod bincode_value {
 
     codec!(Bincode);
 
-    impl<'a, T: 'a + serde::Serialize + serde::de::DeserializeOwned> Value<'a> for Bincode<T> {
+    impl<T: serde::Serialize + serde::de::DeserializeOwned> Value for Bincode<T> {
         fn to_raw_value(&self) -> Result<Raw, Error> {
             let x = bincode::serialize(&self.0)?;
             Ok(x.into())

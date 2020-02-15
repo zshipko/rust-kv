@@ -23,7 +23,7 @@ impl Store {
     }
 
     /// Open a new bucket
-    pub fn bucket<'a, K: Key<'a>, V: std::marker::Unpin + Value<'a>>(
+    pub fn bucket<'a, K: Key<'a>, V: Value>(
         &self,
         name: Option<&str>,
     ) -> Result<Bucket<'a, K, V>, Error> {

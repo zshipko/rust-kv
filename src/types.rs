@@ -86,7 +86,7 @@ impl<'a> From<&'a [u8]> for Integer {
 }
 
 /// A trait used to convert between types and `Raw`
-pub trait Value<'a>: 'a + Sized {
+pub trait Value: Sized {
     /// Wrapper around AsRef<[u8]>
     fn to_raw_value(&self) -> Result<Raw, Error>;
 
@@ -97,7 +97,7 @@ pub trait Value<'a>: 'a + Sized {
 /// Raw is an alias for `sled::IVec`
 pub type Raw = sled::IVec;
 
-impl<'a> Value<'a> for Raw {
+impl Value for Raw {
     fn to_raw_value(&self) -> Result<Raw, Error> {
         Ok(self.clone())
     }
@@ -107,7 +107,7 @@ impl<'a> Value<'a> for Raw {
     }
 }
 
-impl<'a> Value<'a> for std::sync::Arc<[u8]> {
+impl Value for std::sync::Arc<[u8]> {
     fn to_raw_value(&self) -> Result<Raw, Error> {
         Ok(self.clone().into())
     }
@@ -117,7 +117,7 @@ impl<'a> Value<'a> for std::sync::Arc<[u8]> {
     }
 }
 
-impl<'a> Value<'a> for Vec<u8> {
+impl Value for Vec<u8> {
     fn to_raw_value(&self) -> Result<Raw, Error> {
         Ok(self.as_slice().into())
     }
@@ -127,7 +127,7 @@ impl<'a> Value<'a> for Vec<u8> {
     }
 }
 
-impl<'a> Value<'a> for String {
+impl Value for String {
     fn to_raw_value(&self) -> Result<Raw, Error> {
         Ok(self.as_str().into())
     }
