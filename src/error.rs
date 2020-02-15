@@ -14,18 +14,6 @@ pub enum Error {
     #[error("IO error: {0}")]
     IO(#[from] io::Error),
 
-    /// A non-existant or invalid bucket was used
-    #[error("Requested bucket doesn't exist")]
-    InvalidBucket,
-
-    /// A resource could not be found
-    #[error("Requested key doesn't exist")]
-    NotFound,
-
-    /// A transaction is readonly but something tried to write to it
-    #[error("Cannot write in a ReadOnly transaction")]
-    ReadOnly,
-
     /// An encoding error
     #[error("Could not encode or decode value")]
     InvalidEncoding,

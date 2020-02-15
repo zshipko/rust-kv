@@ -1,6 +1,6 @@
 use std::marker::PhantomData;
 
-use crate::{Error, Key, Raw, Value};
+use crate::{Error, Key, Raw, Transaction, TransactionError, Value};
 
 /// Provides typed access to the key/value store
 pub struct Bucket<'a, K: Key<'a>, V: Value>(
@@ -113,12 +113,34 @@ impl<'a, K: Key<'a>, V: Value> Bucket<'a, K, V> {
         self.0.apply_batch(batch.0)?;
         Ok(())
     }
+
+    /// Transaction
+    pub fn transaction<A, F: Fn(Transaction<K, V>) -> Result<A, TransactionError>>(
+        &self,
+        f: F,
+    ) -> Result<A, Error> {
+        let result = self.0.transaction(|t| {
+            let txn = Transaction::new(t);
+            f(txn)
+        });
+
+        match result {
+            Ok(x) => Ok(x),
+            Err(sled::TransactionError::Abort(x)) => Err(x),
+            Err(sled::TransactionError::Storage(e)) => Err(e.into()),
+        }
+    }
 }
 
 /// Batch update
-pub struct Batch<K, V>(sled::Batch, PhantomData<K>, PhantomData<V>);
+pub struct Batch<K, V>(pub(crate) sled::Batch, PhantomData<K>, PhantomData<V>);
 
 impl<'a, K: Key<'a>, V: Value> Batch<K, V> {
+    /// Create a new Batch instance
+    pub fn new() -> Batch<K, V> {
+        Batch(sled::Batch::default(), PhantomData, PhantomData)
+    }
+
     /// Set the value associated with the specified key to the provided value
     pub fn set<X: Into<K>>(&mut self, key: X, value: &V) -> Result<(), Error> {
         let v = value.to_raw_value()?;

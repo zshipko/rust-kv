@@ -57,6 +57,7 @@ mod bucket;
 mod config;
 mod error;
 mod store;
+mod transaction;
 mod types;
 mod value;
 
@@ -64,6 +65,7 @@ pub use bucket::{Batch, Bucket, Iter};
 pub use config::Config;
 pub use error::Error;
 pub use store::Store;
+pub use transaction::{Transaction, TransactionError};
 pub use types::{Integer, Key, Raw, Value};
 pub use value::*;
 
