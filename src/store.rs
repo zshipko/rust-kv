@@ -42,4 +42,14 @@ impl Store {
         let i = self.db.size_on_disk()?;
         Ok(i)
     }
+
+    /// Export entire database
+    pub fn export(&self) -> Vec<(Vec<u8>, Vec<u8>, impl Iterator<Item = Vec<Vec<u8>>>)> {
+        self.db.export()
+    }
+
+    /// Import from database export
+    pub fn import(&self, export: Vec<(Vec<u8>, Vec<u8>, impl Iterator<Item = Vec<Vec<u8>>>)>) {
+        self.db.import(export)
+    }
 }
