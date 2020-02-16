@@ -134,6 +134,12 @@ impl<'a, K: Key<'a>, V: Value> Bucket<'a, K, V> {
         Bucket(t, PhantomData, PhantomData, PhantomData)
     }
 
+    /// Returns true if the bucket contains the given key
+    pub fn contains<X: Into<K>>(&'a self, key: X) -> Result<bool, Error> {
+        let v = self.0.contains_key(key.into().to_raw_key()?)?;
+        Ok(v)
+    }
+
     /// Get the value associated with the specified key
     pub fn get<X: Into<K>>(&'a self, key: X) -> Result<Option<V>, Error> {
         let v = self.0.get(key.into().to_raw_key()?)?;
@@ -202,6 +208,64 @@ impl<'a, K: Key<'a>, V: Value> Bucket<'a, K, V> {
             Err(sled::TransactionError::Abort(x)) => Err(x),
             Err(sled::TransactionError::Storage(e)) => Err(e.into()),
         }
+    }
+
+    /// Get previous key and value in order, if one exists
+    pub fn prev_key<X: Into<K>>(&self, key: X) -> Result<Option<Item<K, V>>, Error> {
+        let item = self.0.get_lt(key.into())?;
+        Ok(item.map(|(k, v)| Item(k, v, PhantomData, PhantomData)))
+    }
+
+
+    /// Get next key and value in order, if one exists
+    pub fn next_key<X: Into<K>>(&self, key: X) -> Result<Option<Item<K, V>>, Error> {
+        let item = self.0.get_gt(key.into())?;
+        Ok(item.map(|(k, v)| Item(k, v, PhantomData, PhantomData)))
+    }
+
+    /// Flush to disk
+    pub fn flush(&self) -> Result<usize, Error> {
+        Ok(self.0.flush()?)
+    }
+
+    /// Flush to disk
+    pub async fn flush_async(&self) -> Result<usize, Error> {
+        let f = self.0.flush_async().await?;
+        Ok(f)
+    }
+
+    /// Pop the last item
+    pub fn pop(&self) -> Result<Option<Item<K, V>>, Error> {
+        let x = self.0.pop_max()?;
+        Ok(x.map(|(k, v)| Item(k, v, PhantomData, PhantomData)))
+    }
+
+
+    /// Pop the first item
+    pub fn pop_first(&self) -> Result<Option<Item<K, V>>, Error> {
+        let x = self.0.pop_min()?;
+        Ok(x.map(|(k, v)| Item(k, v, PhantomData, PhantomData)))
+    }
+
+    /// Get the number of items
+    pub fn len(&self) -> usize {
+        self.0.len()
+    }
+
+    /// Returns true when there are no items
+    pub fn is_empty(&self) -> bool {
+        self.0.is_empty()
+    }
+
+    /// Remove all items
+    pub fn clear(&self) -> Result<(), Error> {
+        self.0.clear()?;
+        Ok(())
+    }
+
+    /// CRC32 checksum of all keys and values
+    pub fn checksum(&self) -> Result<u32, Error> {
+        Ok(self.0.checksum()?)
     }
 }
 

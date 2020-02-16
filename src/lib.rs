@@ -23,10 +23,10 @@
 //!     let store = Store::new(cfg)?;
 //!
 //!     // A Bucket provides typed access to a section of the key/value store
-//!     let test = store.bucket::<Raw, String>(Some("test"))?;
+//!     let test = store.bucket::<Raw, Raw>(Some("test"))?;
 //!
 //!     // Set testing = 123
-//!     test.set(b"test", "123")?;
+//!     test.set(b"test", b"123")?;
 //!     assert!(test.get(b"test").unwrap().unwrap() == "123");
 //!     assert!(test.get(b"something else").unwrap() == None);
 //!
@@ -37,6 +37,7 @@
 //!     bucket.set("example", Json(x))?;
 //!
 //!     let x: Json<SomeType> = bucket.get("example")?.unwrap();
+//!
 //!     for item in bucket.iter() {
 //!         let item = item?;
 //!         let key: String = item.key()?;
@@ -44,16 +45,17 @@
 //!         println!("key: {}, value: {}", key, value);
 //!     }
 //!
-//!     // Transactions
+//!     // A transaction
 //!     bucket.transaction(|txn| {
 //!         txn.set("x", Json(SomeType {a: 1, b: 2}))?;
 //!         txn.set("y", Json(SomeType {a: 3, b: 4}))?;
 //!         txn.set("z", Json(SomeType {a: 5, b: 6}))?;
 //!
-//!         // Nested transactions
+//!         // A nested transaction
 //!         test.transaction(|txn2| {
 //!             let x = txn.get("x")?.unwrap();
-//!             txn2.set(b"x", format!("{}", x.inner().a))?;
+//!             let v = format!("{}", x.inner().a);
+//!             txn2.set(b"x", v.as_str())?;
 //!             Ok(())
 //!         })?;
 //!         Ok(())
