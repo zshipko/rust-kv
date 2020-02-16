@@ -5,7 +5,7 @@ use crate::{Batch, Error, Key, Value};
 // TODO: support transactions with multiple trees
 
 /// Transaction error
-pub type TransactionError = sled::ConflictableTransactionError<Error>;
+pub type TransactionError<E> = sled::ConflictableTransactionError<E>;
 
 /// Transaction
 pub struct Transaction<'a, 'b, K: Key<'a>, V: Value>(
@@ -21,7 +21,7 @@ impl<'a, 'b, K: Key<'a>, V: Value> Transaction<'a, 'b, K, V> {
     }
 
     /// Get the value associated with the specified key
-    pub fn get<X: Into<K>>(&'a self, key: X) -> Result<Option<V>, TransactionError> {
+    pub fn get<X: Into<K>>(&'a self, key: X) -> Result<Option<V>, TransactionError<Error>> {
         let v = self
             .0
             .get(key.into().to_raw_key().map_err(TransactionError::Abort)?)?;
@@ -33,7 +33,11 @@ impl<'a, 'b, K: Key<'a>, V: Value> Transaction<'a, 'b, K, V> {
     }
 
     /// Set the value associated with the specified key to the provided value
-    pub fn set<X: Into<K>, Y: Into<V>>(&self, key: X, value: Y) -> Result<(), TransactionError> {
+    pub fn set<X: Into<K>, Y: Into<V>>(
+        &self,
+        key: X,
+        value: Y,
+    ) -> Result<(), TransactionError<Error>> {
         let v = value
             .into()
             .to_raw_value()
@@ -44,14 +48,14 @@ impl<'a, 'b, K: Key<'a>, V: Value> Transaction<'a, 'b, K, V> {
     }
 
     /// Remove the value associated with the specified key from the database
-    pub fn remove<X: Into<K>>(&self, key: X) -> Result<(), TransactionError> {
+    pub fn remove<X: Into<K>>(&self, key: X) -> Result<(), TransactionError<Error>> {
         self.0
             .remove(key.into().to_raw_key().map_err(TransactionError::Abort)?)?;
         Ok(())
     }
 
     /// Apply batch update
-    pub fn batch(&self, batch: Batch<K, V>) -> Result<(), TransactionError> {
+    pub fn batch(&self, batch: Batch<K, V>) -> Result<(), TransactionError<Error>> {
         self.0.apply_batch(batch.0)?;
         Ok(())
     }

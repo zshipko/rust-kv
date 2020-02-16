@@ -10,7 +10,7 @@ pub struct Bucket<'a, K: Key<'a>, V: Value>(
     PhantomData<&'a ()>,
 );
 
-/// Iterator item
+/// Key/value pair
 pub struct Item<K, V>(Raw, Raw, PhantomData<K>, PhantomData<V>);
 
 /// Batch update
@@ -194,10 +194,10 @@ impl<'a, K: Key<'a>, V: Value> Bucket<'a, K, V> {
     }
 
     /// Execute a transaction
-    pub fn transaction<A, F: Fn(Transaction<K, V>) -> Result<A, TransactionError>>(
+    pub fn transaction<A, E: From<sled::Error>, F: Fn(Transaction<K, V>) -> Result<A, TransactionError<E>>>(
         &self,
         f: F,
-    ) -> Result<A, Error> {
+    ) -> Result<A, E> {
         let result = self.0.transaction(|t| {
             let txn = Transaction::new(t);
             f(txn)

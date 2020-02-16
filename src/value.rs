@@ -16,7 +16,7 @@ pub trait Codec<T>: Value {
 /// Define a codec type and implement the Codec trait
 macro_rules! codec {
     ($x:ident) => {
-        /// $x encoding
+        ///  Codec implementation
         pub struct $x<T: serde::Serialize + serde::de::DeserializeOwned>(pub T);
 
         impl<T: serde::Serialize + serde::de::DeserializeOwned> Codec<T> for $x<T> {

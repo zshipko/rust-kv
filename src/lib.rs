@@ -86,5 +86,10 @@ pub use transaction::{Transaction, TransactionError};
 pub use types::{Integer, Key, Raw, Value};
 pub use value::*;
 
+/// Abort a transaction
+pub fn abort<E>(x: E) -> TransactionError<E> {
+    TransactionError::Abort(x)
+}
+
 #[cfg(test)]
 mod tests;
