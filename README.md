@@ -10,7 +10,7 @@ An embedded key/value store for Rust built on [sled](https://docs.rs/sled)
 - Integer keys
 - Serde integration
 
-Note: `kv` `0.20` and greater have been completely re-written to use [sled](https://docs.rs/sled) instead of LMDB, in the process the entire API has been rewritten.
+Note: `kv` `0.20` and greater have been completely re-written to use [sled](https://docs.rs/sled) instead of LMDB, in the process the entire API has been rewritten and simplified significantly. If you need to use LMDB, check out [rkv](https://docs.rs/rkv)
 
 ## Optional features
 
@@ -20,8 +20,6 @@ Note: `kv` `0.20` and greater have been completely re-written to use [sled](http
     - JSON value encoding using `serde`
 * `bincode-value`
     - bincode value encoding using `serde`
-
-Some examples of implementing your own encodings using serde can be found [here](https://github.com/asonix/kv-testing)
 
 ## Documentation
 
