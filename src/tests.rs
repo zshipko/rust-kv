@@ -15,11 +15,11 @@ fn test_basic() {
     // Create a new store
     let cfg = Config::new(path.clone());
     let store = Store::new(cfg).unwrap();
-    let bucket = store.bucket::<&str, String>(None).unwrap();
+    let bucket = store.bucket::<&str, Raw>(None).unwrap();
     assert!(path::Path::new(path.as_str()).exists());
 
     bucket.set("testing", "abc123").unwrap();
-    assert_eq!(bucket.get("testing").unwrap(), Some("abc123".into()));
+    assert_eq!(bucket.get("testing").unwrap().unwrap(), b"abc123");
 }
 
 #[test]
@@ -28,12 +28,12 @@ fn test_integer_keys() {
 
     let cfg = Config::new(path.clone());
     let store = Store::new(cfg).unwrap();
-    let bucket = store.bucket::<Integer, String>(None).unwrap();
+    let bucket = store.bucket::<Integer, Raw>(None).unwrap();
     assert!(path::Path::new(path.as_str()).exists());
 
     let key = 0x1234;
     bucket.set(key, "abc123").unwrap();
-    assert_eq!(bucket.get(key).unwrap(), Some("abc123".into()));
+    assert_eq!(bucket.get(key).unwrap().unwrap(), b"abc123");
 }
 
 #[test]
@@ -73,7 +73,7 @@ fn test_msgpack_encoding() {
 
     let cfg = Config::new(path.clone());
     let store = Store::new(cfg).unwrap();
-    let bucket = store.bucket::<String, Msgpack<Testing>>(None).unwrap();
+    let bucket = store.bucket::<&str, Msgpack<Testing>>(None).unwrap();
     assert!(path::Path::new(path.as_str()).exists());
 
     bucket
@@ -110,7 +110,7 @@ fn test_json_encoding() {
 
     let cfg = Config::new(path.clone());
     let store = Store::new(cfg).unwrap();
-    let bucket = store.bucket::<String, Json<Testing>>(None).unwrap();
+    let bucket = store.bucket::<&str, Json<Testing>>(None).unwrap();
     assert!(path::Path::new(path.as_str()).exists());
 
     bucket
@@ -147,7 +147,7 @@ fn test_bincode_encoding() {
 
     let cfg = Config::new(path.clone());
     let store = Store::new(cfg).unwrap();
-    let bucket = store.bucket::<String, Bincode<Testing>>(None).unwrap();
+    let bucket = store.bucket::<&str, Bincode<Testing>>(None).unwrap();
     assert!(path::Path::new(path.as_str()).exists());
 
     bucket
@@ -179,4 +179,31 @@ fn test_config_encoding() {
     let cfg2 = Config::load("./config").unwrap();
     assert!(cfg == cfg2);
     let _ = fs::remove_file("./config");
+}
+
+#[test]
+fn test_watch() {
+    let path = reset("watch");
+    let cfg = Config::new(path.clone());
+    let store = Store::new(cfg).unwrap();
+    let bucket = store.bucket::<&str, Raw>(Some("watch")).unwrap();
+    let mut watch = bucket.watch_prefix("").unwrap();
+
+    bucket.set("abc", b"123").unwrap();
+
+    let next = watch.next().unwrap();
+    let next = next.unwrap();
+
+    assert!(next.is_insert());
+    assert!(next.value().unwrap().unwrap() == b"123");
+    assert!(next.key().unwrap() == "abc");
+
+    bucket.remove("abc").unwrap();
+
+    let next = watch.next().unwrap();
+    let next = next.unwrap();
+
+    assert!(next.is_remove());
+    assert!(next.value().unwrap() == None);
+    assert!(next.key().unwrap() == "abc");
 }

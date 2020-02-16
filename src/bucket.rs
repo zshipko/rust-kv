@@ -10,12 +10,79 @@ pub struct Bucket<'a, K: Key<'a>, V: Value>(
     PhantomData<&'a ()>,
 );
 
-pub struct Item<K, V>((Raw, Raw), PhantomData<K>, PhantomData<V>);
+/// Iterator item
+pub struct Item<K, V>(Raw, Raw, PhantomData<K>, PhantomData<V>);
+
+/// Batch update
+pub struct Batch<K, V>(pub(crate) sled::Batch, PhantomData<K>, PhantomData<V>);
+
+/// Subscribe to key updated
+pub struct Watch<K, V>(sled::Subscriber, PhantomData<K>, PhantomData<V>);
+
+/// Event is used to describe the type of update
+pub enum Event<K, V> {
+    /// A key has been updated
+    Insert(Item<K, V>),
+    /// A key has been removed
+    Remove(Raw),
+}
+
+impl<'a, K: Key<'a>, V> Iterator for Watch<K, V> {
+    type Item = Result<Event<K, V>, Error>;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        match self.0.next() {
+            None => None,
+            Some(sled::Event::Insert(k, v)) => {
+                let k: Raw = k.into();
+                Some(Ok(Event::Insert(Item(k, v, PhantomData, PhantomData))))
+            }
+            Some(sled::Event::Remove(k)) => {
+                let k: Raw = k.into();
+                Some(Ok(Event::Remove(k)))
+            }
+        }
+    }
+}
+
+impl<'a, K: Key<'a>, V: Value> Event<K, V> {
+    /// Returns true when event is insert
+    pub fn is_insert(&self) -> bool {
+        match self {
+            Event::Insert(_) => true,
+            _ => false,
+        }
+    }
+
+    /// Returns true when event is remove
+    pub fn is_remove(&self) -> bool {
+        match self {
+            Event::Remove(_) => true,
+            _ => false,
+        }
+    }
+
+    /// Get event key
+    pub fn key(&'a self) -> Result<K, Error> {
+        match self {
+            Event::Remove(k) => K::from_raw_key(k),
+            Event::Insert(item) => item.key(),
+        }
+    }
+
+    /// Get event value (for insert)
+    pub fn value(&'a self) -> Result<Option<V>, Error> {
+        match self {
+            Event::Remove(_) => Ok(None),
+            Event::Insert(item) => item.value().map(Some),
+        }
+    }
+}
 
 impl<'a, K: Key<'a>, V: Value> Item<K, V> {
     /// Get the value associated with the specified key
     pub fn value<T: From<V>>(&'a self) -> Result<T, Error> {
-        let x = V::from_raw_value((self.0).1.clone())?;
+        let x = V::from_raw_value((self.1).clone())?;
         Ok(x.into())
     }
 
@@ -24,7 +91,7 @@ impl<'a, K: Key<'a>, V: Value> Item<K, V> {
     where
         K: Into<T>,
     {
-        let k = K::from_raw_key(&(self.0).0)?;
+        let k = K::from_raw_key(&self.0)?;
         Ok(k.into())
     }
 }
@@ -43,7 +110,7 @@ where
         match self.0.next() {
             None => None,
             Some(Err(e)) => Some(Err(e.into())),
-            Some(Ok((k, v))) => Some(Ok(Item((k, v), PhantomData, PhantomData))),
+            Some(Ok((k, v))) => Some(Ok(Item(k, v, PhantomData, PhantomData))),
         }
     }
 }
@@ -57,7 +124,7 @@ where
         match self.0.next_back() {
             None => None,
             Some(Err(e)) => Some(Err(e.into())),
-            Some(Ok((k, v))) => Some(Ok(Item((k, v), PhantomData, PhantomData))),
+            Some(Ok((k, v))) => Some(Ok(Item(k, v, PhantomData, PhantomData))),
         }
     }
 }
@@ -114,7 +181,13 @@ impl<'a, K: Key<'a>, V: Value> Bucket<'a, K, V> {
         Ok(())
     }
 
-    /// Transaction
+    /// Get updates when a key with the given prefix is changed
+    pub fn watch_prefix<X: Into<K>>(&self, prefix: X) -> Result<Watch<K, V>, Error> {
+        let w = self.0.watch_prefix(prefix.into());
+        Ok(Watch(w, PhantomData, PhantomData))
+    }
+
+    /// Execute a transaction
     pub fn transaction<A, F: Fn(Transaction<K, V>) -> Result<A, TransactionError>>(
         &self,
         f: F,
@@ -131,9 +204,6 @@ impl<'a, K: Key<'a>, V: Value> Bucket<'a, K, V> {
         }
     }
 }
-
-/// Batch update
-pub struct Batch<K, V>(pub(crate) sled::Batch, PhantomData<K>, PhantomData<V>);
 
 impl<'a, K: Key<'a>, V: Value> Batch<K, V> {
     /// Create a new Batch instance

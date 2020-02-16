@@ -76,7 +76,7 @@ mod transaction;
 mod types;
 mod value;
 
-pub use bucket::{Batch, Bucket, Iter};
+pub use bucket::{Batch, Bucket, Event, Item, Iter, Watch};
 pub use config::Config;
 pub use error::Error;
 pub use store::Store;
