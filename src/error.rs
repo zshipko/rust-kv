@@ -30,6 +30,10 @@ pub enum Error {
     #[error("String UTF8 error")]
     FromUtf8(std::string::FromUtf8Error),
 
+    /// SystemTime
+    #[error("SystemTime: {0}")]
+    SystemTime(#[from] std::time::SystemTimeError),
+
     /// Generic message
     #[error("Message: {0}")]
     Message(String),

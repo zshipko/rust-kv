@@ -235,14 +235,14 @@ impl<'a, K: Key<'a>, V: Value> Bucket<'a, K, V> {
     }
 
     /// Pop the last item
-    pub fn pop(&self) -> Result<Option<Item<K, V>>, Error> {
+    pub fn pop_back(&self) -> Result<Option<Item<K, V>>, Error> {
         let x = self.0.pop_max()?;
         Ok(x.map(|(k, v)| Item(k, v, PhantomData, PhantomData)))
     }
 
 
     /// Pop the first item
-    pub fn pop_first(&self) -> Result<Option<Item<K, V>>, Error> {
+    pub fn pop_front(&self) -> Result<Option<Item<K, V>>, Error> {
         let x = self.0.pop_min()?;
         Ok(x.map(|(k, v)| Item(k, v, PhantomData, PhantomData)))
     }

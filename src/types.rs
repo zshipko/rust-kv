@@ -1,4 +1,5 @@
 use std::mem;
+use std::time::SystemTime;
 
 use crate::Error;
 
@@ -51,23 +52,65 @@ impl<'a> Key<'a> for Integer {
 
 /// Integer key type
 #[derive(Debug, Clone, Copy, PartialEq, PartialOrd)]
-pub struct Integer([u8; 8]);
+pub struct Integer([u8; 16]);
+
+impl From<u128> for Integer {
+    fn from(i: u128) -> Integer {
+        unsafe { Integer(mem::transmute(i.to_be())) }
+    }
+}
 
 impl From<u64> for Integer {
-    #[cfg(target_endian = "little")]
     fn from(i: u64) -> Integer {
-        unsafe { Integer(mem::transmute(i.to_le())) }
+        let i = i as u128;
+        i.into()
+    }
+}
+
+impl From<u32> for Integer {
+    fn from(i: u32) -> Integer {
+        let i = i as u128;
+        i.into()
+    }
+}
+
+impl From<i32> for Integer {
+    fn from(i: i32) -> Integer {
+        let i = i as u128;
+        i.into()
+    }
+}
+
+impl From<usize> for Integer {
+    fn from(i: usize) -> Integer {
+        let i = i as u128;
+        i.into()
+    }
+}
+
+impl From<Integer> for u128 {
+    #[cfg(target_endian = "big")]
+    fn from(i: Integer) -> u128 {
+        unsafe { mem::transmute(i.0) }
     }
 
-    #[cfg(target_endian = "big")]
-    fn from(i: u64) -> Integer {
-        unsafe { Integer(mem::transmute(i.to_be())) }
+    #[cfg(target_endian = "little")]
+    fn from(i: Integer) -> u128 {
+        u128::from_be(unsafe { mem::transmute(i.0) })
     }
 }
 
 impl From<Integer> for u64 {
     fn from(i: Integer) -> u64 {
-        unsafe { mem::transmute(i.0) }
+        let i: u128 = i.into();
+        i as u64
+    }
+}
+
+impl From<Integer> for usize {
+    fn from(i: Integer) -> usize {
+        let i: u128 = i.into();
+        i as usize
     }
 }
 
@@ -79,9 +122,23 @@ impl AsRef<[u8]> for Integer {
 
 impl<'a> From<&'a [u8]> for Integer {
     fn from(buf: &'a [u8]) -> Integer {
-        let mut dst = Integer::from(0);
-        dst.0[..8].clone_from_slice(&buf[..8]);
+        let mut dst = Integer::from(0u128);
+        dst.0[..16].clone_from_slice(&buf[..16]);
         dst
+    }
+}
+
+impl Integer {
+    /// Current timestamp in seconds from the Unix epoch
+    pub fn timestamp() -> Result<Integer, Error> {
+        let ts = SystemTime::now().duration_since(SystemTime::UNIX_EPOCH)?;
+        Ok(Integer::from(ts.as_secs() as u128))
+    }
+
+    /// Current timestamp in milliseconds from the Unix epoch
+    pub fn timestamp_ms() -> Result<Integer, Error> {
+        let ts = SystemTime::now().duration_since(SystemTime::UNIX_EPOCH)?;
+        Ok(Integer::from(ts.as_millis()))
     }
 }
 

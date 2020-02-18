@@ -53,8 +53,8 @@ fn test_iter() {
 
     iter.enumerate().for_each(|(index, item)| {
         let item = item.unwrap();
-        let key: u64 = item.key().unwrap();
-        assert_eq!(key, index as u64);
+        let key: u128 = item.key().unwrap();
+        assert_eq!(key, index as u128);
         assert_eq!(item.value::<String>().unwrap(), format!("{}", index));
     });
 }

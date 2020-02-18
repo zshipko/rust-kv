@@ -1,8 +1,8 @@
 #![deny(missing_docs)]
 
 //! `kv` is a simple way to embed a key/value store in Rust applications. It is built using
-//! [sled](https://docs.rs/sled) and aims to be as lightweight as possible,
-//! while still providing a nice high level interface.
+//! [sled](https://docs.rs/sled) and aims to be as lightweight as possible, while still
+//! providing a nice high level interface.
 //!
 //! ## Getting started
 //!
@@ -29,6 +29,10 @@
 //!     test.set(b"test", b"123")?;
 //!     assert!(test.get(b"test").unwrap().unwrap() == "123");
 //!     assert!(test.get(b"something else").unwrap() == None);
+//!
+//!     // Integer keys
+//!     let aaa = store.bucket::<Integer, String>(Some("aaa"))?;
+//!     aaa.set(1, "Testing");
 //!
 //!     #[cfg(feature = "json-value")]
 //!     {
