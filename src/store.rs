@@ -22,6 +22,25 @@ impl Store {
         Ok(self.config.path.as_path())
     }
 
+    /// Generate monotonic ID
+    pub fn generate_id(&self) -> Result<u64, Error> {
+        let id = self.db.generate_id()?;
+        Ok(id)
+    }
+
+    /// Get a list of bucket names
+    pub fn buckets(&self) -> Vec<String> {
+        self.db
+            .tree_names()
+            .into_iter()
+            .map(|x| String::from_utf8(x.to_vec()))
+            .filter_map(|x| match x {
+                Ok(x) => Some(x),
+                Err(_) => None,
+            })
+            .collect()
+    }
+
     /// Open a new bucket
     pub fn bucket<'a, K: Key<'a>, V: Value>(
         &self,
