@@ -2,9 +2,16 @@
 name = "kv"
 version = "0.20.0"
 authors = ["Zach Shipko <zachshipko@gmail.com>"]
+license = "ISC"
+keywords = ["key-value-store", "database", "lmdb"]
+repository = "https://github.com/zshipko/rust-kv"
+documentation = "https://docs.rs/kv"
+description = "An embedded key/value store for Rust"
+readme = "README.md"
 edition = "2018"
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+[package.metadata.docs.rs]
+all-features = true
 
 [dependencies]
 sled = "0.31"
