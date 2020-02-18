@@ -60,7 +60,7 @@
 //!             // A nested transaction
 //!             test.transaction(|txn2| {
 //!                 let x = txn.get("x")?.unwrap();
-//!                 let v = format!("{}", x.inner().a);
+//!                 let v = format!("{}", x.as_ref().a);
 //!                 txn2.set(b"x", v.as_str())?;
 //!                 Ok(())
 //!             })?;

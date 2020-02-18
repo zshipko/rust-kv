@@ -15,11 +15,13 @@ Note: `kv` `0.20` and greater have been completely re-written to use [sled](http
 ## Optional features
 
 * `msgpack-value`
-    - MessagePack encoding using `serde`
+    - MessagePack encoding using `rmp-serde`
 * `json-value`
-    - JSON value encoding using `serde`
+    - JSON encoding using `serde_json`
 * `bincode-value`
-    - bincode value encoding using `serde`
+    - bincode encoding using `bincode`
+* `lexpr-value`
+    - S-expression encoding using `serde-lexpr`
 
 ## Documentation
 

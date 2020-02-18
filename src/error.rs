@@ -57,6 +57,11 @@ pub enum Error {
     #[cfg(feature = "msgpack-value")]
     #[error("Msgpack encoding Error: {0}")]
     Bincode(#[from] Box<bincode::ErrorKind>),
+
+    /// Lexpr error
+    #[cfg(feature = "lexpr-value")]
+    #[error("S-Expression error: {0}")]
+    Lexpr(#[from] serde_lexpr::Error),
 }
 
 impl<T> From<PoisonError<T>> for Error {

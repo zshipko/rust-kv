@@ -170,6 +170,43 @@ fn test_bincode_encoding() {
     );
 }
 
+#[cfg(feature = "lexpr-value")]
+#[test]
+fn test_sexpr_encoding() {
+    use crate::Lexpr;
+    let path = reset("sexpr");
+
+    #[derive(Debug, serde::Serialize, serde::Deserialize, PartialEq)]
+    struct Testing {
+        a: i32,
+        b: String,
+    }
+
+    let cfg = Config::new(path.clone());
+    let store = Store::new(cfg).unwrap();
+    let bucket = store.bucket::<&str, Lexpr<Testing>>(None).unwrap();
+    assert!(path::Path::new(path.as_str()).exists());
+
+    bucket
+        .set(
+            "testing",
+            Lexpr(Testing {
+                a: 1,
+                b: "field".into(),
+            }),
+        )
+        .unwrap();
+
+    let v = bucket.get("testing").unwrap();
+    assert_eq!(
+        v.unwrap().0,
+        Testing {
+            a: 1,
+            b: "field".into(),
+        }
+    );
+}
+
 #[test]
 fn test_config_encoding() {
     let mut cfg = Config::new("./test");

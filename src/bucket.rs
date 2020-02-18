@@ -12,9 +12,11 @@ pub struct Bucket<'a, K: Key<'a>, V: Value>(
 );
 
 /// Key/value pair
+#[derive(Clone)]
 pub struct Item<K, V>(Raw, Raw, PhantomData<K>, PhantomData<V>);
 
 /// Batch update
+#[derive(Clone)]
 pub struct Batch<K, V>(pub(crate) sled::Batch, PhantomData<K>, PhantomData<V>);
 
 /// Subscribe to key updated
