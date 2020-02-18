@@ -16,7 +16,7 @@ rmp-serde = {version = "0.14", optional = true}
 bincode = {version = "1.2", optional = true}
 
 [features]
-default = ["json-value", "msgpack-value", "bincode-value"]
+default = []
 json-value = ["serde_json"]
 msgpack-value = ["rmp-serde"]
 bincode-value = ["bincode"]

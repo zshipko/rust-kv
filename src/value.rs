@@ -1,3 +1,4 @@
+#[allow(unused_imports)]
 use crate::{Error, Raw, Value};
 
 /// Base trait for shared functionality
@@ -16,7 +17,7 @@ pub trait Codec<T>: Value {
 /// Define a codec type and implement the Codec trait
 macro_rules! codec {
     ($x:ident) => {
-        ///  Codec implementation
+        /// Codec implementation
         pub struct $x<T: serde::Serialize + serde::de::DeserializeOwned>(pub T);
 
         impl<T: serde::Serialize + serde::de::DeserializeOwned> Codec<T> for $x<T> {
@@ -110,4 +111,4 @@ pub use json_value::Json;
 pub use msgpack_value::Msgpack;
 
 #[cfg(feature = "bincode-value")]
-pub use self::bincode_value::Bincode;
+pub use bincode_value::Bincode;
