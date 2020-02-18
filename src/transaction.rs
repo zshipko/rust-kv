@@ -2,12 +2,11 @@ use std::marker::PhantomData;
 
 use crate::{Batch, Error, Key, Value};
 
-// TODO: support transactions with multiple trees
-
 /// Transaction error
 pub type TransactionError<E> = sled::ConflictableTransactionError<E>;
 
 /// Transaction
+#[derive(Clone)]
 pub struct Transaction<'a, 'b, K: Key<'a>, V: Value>(
     &'b sled::TransactionalTree,
     PhantomData<K>,

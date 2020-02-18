@@ -3,6 +3,7 @@ use std::marker::PhantomData;
 use crate::{Error, Key, Raw, Transaction, TransactionError, Value};
 
 /// Provides typed access to the key/value store
+#[derive(Clone)]
 pub struct Bucket<'a, K: Key<'a>, V: Value>(
     pub(crate) sled::Tree,
     PhantomData<K>,

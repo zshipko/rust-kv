@@ -1,7 +1,7 @@
 #![deny(missing_docs)]
 
 //! `kv` is a simple way to embed a key/value store in Rust applications. It is built using
-//! [sled](https://docs.rs/sled) and aims to be as lightweight as possible, while still
+//! [sled](https://docs.rs/sled) and aims to be as lightweight as possible while still
 //! providing a nice high level interface.
 //!
 //! ## Getting started
@@ -76,20 +76,20 @@
 //! ```
 
 mod bucket;
+mod codec;
 mod config;
 mod error;
 mod store;
 mod transaction;
 mod types;
-mod value;
 
 pub use bucket::{Batch, Bucket, Event, Item, Iter, Watch};
+pub use codec::*;
 pub use config::Config;
 pub use error::Error;
 pub use store::Store;
 pub use transaction::{Transaction, TransactionError};
 pub use types::{Integer, Key, Raw, Value};
-pub use value::*;
 
 /// Abort a transaction
 pub fn abort<E>(x: E) -> TransactionError<E> {

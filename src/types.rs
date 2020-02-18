@@ -160,7 +160,7 @@ impl Value for Raw {
     }
 
     fn from_raw_value(r: Raw) -> Result<Self, Error> {
-        Ok(r.clone())
+        Ok(r)
     }
 }
 
@@ -170,7 +170,7 @@ impl Value for std::sync::Arc<[u8]> {
     }
 
     fn from_raw_value(r: Raw) -> Result<Self, Error> {
-        Ok(r.clone().into())
+        Ok(r.into())
     }
 }
 
