@@ -23,6 +23,10 @@ pub struct Config {
     /// Enable compression by setting `use_compression` to true
     #[serde(default)]
     pub use_compression: bool,
+
+    /// Specify the flush frequency
+    #[serde(default)]
+    pub flush_every_ms: Option<u64>,
 }
 
 impl Config {
@@ -33,6 +37,7 @@ impl Config {
             read_only: false,
             temporary: false,
             use_compression: false,
+            flush_every_ms: None,
         }
     }
 
@@ -86,11 +91,18 @@ impl Config {
         self
     }
 
+    /// Set flush frequency
+    pub fn flush_every_ms(mut self, ms: u64) -> Config {
+        self.flush_every_ms = Some(ms);
+        self
+    }
+
     pub(crate) fn open(&mut self) -> Result<sled::Db, Error> {
         let config = sled::Config::new()
             .path(&self.path)
             .read_only(self.read_only)
             .temporary(self.temporary)
+            .flush_every_ms(self.flush_every_ms)
             .use_compression(self.use_compression);
         let db = config.open()?;
         Ok(db)

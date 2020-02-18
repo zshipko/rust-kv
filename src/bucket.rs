@@ -22,7 +22,7 @@ pub struct Watch<K, V>(sled::Subscriber, PhantomData<K>, PhantomData<V>);
 /// Event is used to describe the type of update
 pub enum Event<K, V> {
     /// A key has been updated
-    Insert(Item<K, V>),
+    Set(Item<K, V>),
     /// A key has been removed
     Remove(Raw),
 }
@@ -35,7 +35,7 @@ impl<'a, K: Key<'a>, V> Iterator for Watch<K, V> {
             None => None,
             Some(sled::Event::Insert(k, v)) => {
                 let k: Raw = k.into();
-                Some(Ok(Event::Insert(Item(k, v, PhantomData, PhantomData))))
+                Some(Ok(Event::Set(Item(k, v, PhantomData, PhantomData))))
             }
             Some(sled::Event::Remove(k)) => {
                 let k: Raw = k.into();
@@ -46,15 +46,15 @@ impl<'a, K: Key<'a>, V> Iterator for Watch<K, V> {
 }
 
 impl<'a, K: Key<'a>, V: Value> Event<K, V> {
-    /// Returns true when event is insert
-    pub fn is_insert(&self) -> bool {
+    /// Returns true when event is `Set`
+    pub fn is_set(&self) -> bool {
         match self {
-            Event::Insert(_) => true,
+            Event::Set(_) => true,
             _ => false,
         }
     }
 
-    /// Returns true when event is remove
+    /// Returns true when event is `Remove`
     pub fn is_remove(&self) -> bool {
         match self {
             Event::Remove(_) => true,
@@ -66,7 +66,7 @@ impl<'a, K: Key<'a>, V: Value> Event<K, V> {
     pub fn key(&'a self) -> Result<K, Error> {
         match self {
             Event::Remove(k) => K::from_raw_key(k),
-            Event::Insert(item) => item.key(),
+            Event::Set(item) => item.key(),
         }
     }
 
@@ -74,7 +74,7 @@ impl<'a, K: Key<'a>, V: Value> Event<K, V> {
     pub fn value(&'a self) -> Result<Option<V>, Error> {
         match self {
             Event::Remove(_) => Ok(None),
-            Event::Insert(item) => item.value().map(Some),
+            Event::Set(item) => item.value().map(Some),
         }
     }
 }
@@ -82,7 +82,7 @@ impl<'a, K: Key<'a>, V: Value> Event<K, V> {
 impl<'a, K: Key<'a>, V: Value> Item<K, V> {
     /// Get the value associated with the specified key
     pub fn value<T: From<V>>(&'a self) -> Result<T, Error> {
-        let x = V::from_raw_value((self.1).clone())?;
+        let x = V::from_raw_value(self.1.clone())?;
         Ok(x.into())
     }
 

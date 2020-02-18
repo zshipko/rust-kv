@@ -34,44 +34,36 @@ macro_rules! codec {
             }
         }
     };
+
+    ($x:ident, {$ser:expr, $de:expr}) => {
+        codec!($x);
+
+        impl<T: serde::Serialize + serde::de::DeserializeOwned> Value for $x<T> {
+            fn to_raw_value(&self) -> Result<Raw, Error> {
+                let x = $ser(&self.0)?;
+                Ok(x.into())
+            }
+
+            fn from_raw_value(r: Raw) -> Result<Self, Error> {
+                let x = $de(&r)?;
+                Ok($x(x))
+            }
+        }
+    };
 }
 
 #[cfg(feature = "msgpack-value")]
 mod msgpack_value {
     use super::*;
 
-    codec!(Msgpack);
-
-    impl<T: serde::Serialize + serde::de::DeserializeOwned> Value for Msgpack<T> {
-        fn to_raw_value(&self) -> Result<Raw, Error> {
-            let x = rmp_serde::to_vec(&self.0)?;
-            Ok(x.into())
-        }
-
-        fn from_raw_value(r: Raw) -> Result<Self, Error> {
-            let x = rmp_serde::from_slice(&r)?;
-            Ok(Msgpack(x))
-        }
-    }
+    codec!(Msgpack, {rmp_serde::to_vec, rmp_serde::from_slice});
 }
 
 #[cfg(feature = "json-value")]
 mod json_value {
     use super::*;
 
-    codec!(Json);
-
-    impl<T: serde::Serialize + serde::de::DeserializeOwned> Value for Json<T> {
-        fn to_raw_value(&self) -> Result<Raw, Error> {
-            let x = serde_json::to_vec(&self.0)?;
-            Ok(x.into())
-        }
-
-        fn from_raw_value(r: Raw) -> Result<Self, Error> {
-            let x = serde_json::from_slice(&r)?;
-            Ok(Json(x))
-        }
-    }
+    codec!(Json, {serde_json::to_vec, serde_json::from_slice});
 
     impl<T: serde::Serialize + serde::de::DeserializeOwned> std::fmt::Display for Json<T> {
         fn fmt(&self, w: &mut std::fmt::Formatter) -> std::fmt::Result {
@@ -89,19 +81,7 @@ mod json_value {
 mod bincode_value {
     use super::*;
 
-    codec!(Bincode);
-
-    impl<T: serde::Serialize + serde::de::DeserializeOwned> Value for Bincode<T> {
-        fn to_raw_value(&self) -> Result<Raw, Error> {
-            let x = bincode::serialize(&self.0)?;
-            Ok(x.into())
-        }
-
-        fn from_raw_value(r: Raw) -> Result<Self, Error> {
-            let x = bincode::deserialize(&r)?;
-            Ok(Bincode(x))
-        }
-    }
+    codec!(Bincode, {bincode::serialize, bincode::deserialize});
 }
 
 #[cfg(feature = "json-value")]

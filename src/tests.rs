@@ -194,7 +194,7 @@ fn test_watch() {
     let next = watch.next().unwrap();
     let next = next.unwrap();
 
-    assert!(next.is_insert());
+    assert!(next.is_set());
     assert!(next.value().unwrap().unwrap() == b"123");
     assert!(next.key().unwrap() == "abc");
 
