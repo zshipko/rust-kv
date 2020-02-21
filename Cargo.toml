@@ -1,6 +1,6 @@
 [package]
 name = "kv"
-version = "0.20.0"
+version = "0.20.1"
 authors = ["Zach Shipko <zachshipko@gmail.com>"]
 license = "ISC"
 keywords = ["key-value-store", "database", "sled"]
@@ -22,7 +22,6 @@ serde_json = {version = "1", optional = true}
 rmp-serde = {version = "0.14", optional = true}
 bincode = {version = "1.2", optional = true}
 serde-lexpr = {version = "0.1", optional = true}
-bson = {version = "0.14", optional = true}
 
 [features]
 default = []
