@@ -54,8 +54,8 @@ pub enum Error {
     MsgpackDecode(#[from] rmp_serde::decode::Error),
 
     /// Bincode error
-    #[cfg(feature = "msgpack-value")]
-    #[error("Msgpack encoding Error: {0}")]
+    #[cfg(feature = "bincode-value")]
+    #[error("Bincode encoding Error: {0}")]
     Bincode(#[from] Box<bincode::ErrorKind>),
 
     /// Lexpr error
