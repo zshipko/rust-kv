@@ -27,6 +27,10 @@ pub struct Config {
     /// Specify the flush frequency
     #[serde(default)]
     pub flush_every_ms: Option<u64>,
+
+    /// Specify the cache capacity
+    #[serde(default)]
+    pub cache_capacity: Option<u64>,
 }
 
 impl Config {
@@ -38,6 +42,7 @@ impl Config {
             temporary: false,
             use_compression: false,
             flush_every_ms: None,
+            cache_capacity: None,
         }
     }
 
@@ -97,6 +102,12 @@ impl Config {
         self
     }
 
+    /// Set cache capacity
+    pub fn cache_capacity(mut self, ms: u64) -> Config {
+        self.cache_capacity = Some(ms);
+        self
+    }
+
     pub(crate) fn open(&mut self) -> Result<sled::Db, Error> {
         let config = sled::Config::new()
             .path(&self.path)
@@ -104,6 +115,11 @@ impl Config {
             .temporary(self.temporary)
             .flush_every_ms(self.flush_every_ms)
             .use_compression(self.use_compression);
+        let config = if let Some(cache_capacity) = self.cache_capacity {
+            config.cache_capacity(cache_capacity)
+        } else {
+            config
+        };
         let db = config.open()?;
         Ok(db)
     }
