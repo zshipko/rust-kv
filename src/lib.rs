@@ -57,13 +57,6 @@
 //!             txn.set("y", Json(SomeType {a: 3, b: 4}))?;
 //!             txn.set("z", Json(SomeType {a: 5, b: 6}))?;
 //!
-//!             // A nested transaction
-//!             test.transaction(|txn2| {
-//!                 let x = txn.get("x")?.unwrap();
-//!                 let v = format!("{}", x.as_ref().a);
-//!                 txn2.set(b"x", v.as_str())?;
-//!                 Ok(())
-//!             })?;
 //!             Ok(())
 //!         })?;
 //!     }
