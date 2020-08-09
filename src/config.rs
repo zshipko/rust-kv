@@ -12,10 +12,6 @@ pub struct Config {
     /// The `path` field determines where the database will be created
     pub path: PathBuf,
 
-    /// The `read_only` field specifies whether or not writes will be allowed
-    #[serde(default)]
-    pub read_only: bool,
-
     /// The `temporary` field specifies if the database will be destroyed on close
     #[serde(default)]
     pub temporary: bool,
@@ -38,7 +34,6 @@ impl Config {
     pub fn new<P: AsRef<Path>>(p: P) -> Config {
         Config {
             path: p.as_ref().to_path_buf(),
-            read_only: false,
             temporary: false,
             use_compression: false,
             flush_every_ms: None,
@@ -78,13 +73,7 @@ impl Config {
         Self::load_from(file)
     }
 
-    /// Set readonly field
-    pub fn read_only(mut self, readonly: bool) -> Config {
-        self.read_only = readonly;
-        self
-    }
-
-    /// Set readonly field
+    /// Set compression field
     pub fn use_compression(mut self, use_compression: bool) -> Config {
         self.use_compression = use_compression;
         self
@@ -111,7 +100,6 @@ impl Config {
     pub(crate) fn open(&mut self) -> Result<sled::Db, Error> {
         let config = sled::Config::new()
             .path(&self.path)
-            .read_only(self.read_only)
             .temporary(self.temporary)
             .flush_every_ms(self.flush_every_ms)
             .use_compression(self.use_compression);

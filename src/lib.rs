@@ -17,7 +17,7 @@
 //!
 //! fn run() -> Result<(), Error> {
 //!     // Configure the database
-//!     let mut cfg = Config::new("./test/example");
+//!     let mut cfg = Config::new("./test/example1");
 //!
 //!     // Open the key/value store
 //!     let store = Store::new(cfg)?;

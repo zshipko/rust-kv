@@ -210,7 +210,6 @@ fn test_sexpr_encoding() {
 #[test]
 fn test_config_encoding() {
     let mut cfg = Config::new("./test");
-    cfg.read_only = true;
     cfg.use_compression = true;
     cfg.save("./config").unwrap();
     let cfg2 = Config::load("./config").unwrap();

@@ -1,6 +1,6 @@
 [package]
 name = "kv"
-version = "0.20.2"
+version = "0.21.0"
 authors = ["Zach Shipko <zachshipko@gmail.com>"]
 license = "ISC"
 keywords = ["key-value-store", "database", "sled"]
@@ -14,7 +14,7 @@ edition = "2018"
 all-features = true
 
 [dependencies]
-sled = "0.31"
+sled = "0.34"
 thiserror = "1"
 toml = "0.5"
 serde = {version = "1", features = ["derive"]}

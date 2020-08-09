@@ -82,8 +82,8 @@ impl From<std::string::FromUtf8Error> for Error {
     }
 }
 
-impl From<Error> for sled::ConflictableTransactionError<Error> {
-    fn from(e: Error) -> sled::ConflictableTransactionError<Error> {
-        sled::ConflictableTransactionError::Abort(e)
+impl From<Error> for sled::transaction::ConflictableTransactionError<Error> {
+    fn from(e: Error) -> sled::transaction::ConflictableTransactionError<Error> {
+        sled::transaction::ConflictableTransactionError::Abort(e)
     }
 }

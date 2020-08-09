@@ -36,12 +36,12 @@ impl<'a, K: Key<'a>, V> Iterator for Watch<K, V> {
     fn next(&mut self) -> Option<Self::Item> {
         match self.0.next() {
             None => None,
-            Some(sled::Event::Insert(k, v)) => {
-                let k: Raw = k.into();
-                Some(Ok(Event::Set(Item(k, v, PhantomData, PhantomData))))
+            Some(sled::Event::Insert{key, value}) => {
+                let k: Raw = key.into();
+                Some(Ok(Event::Set(Item(k, value, PhantomData, PhantomData))))
             }
-            Some(sled::Event::Remove(k)) => {
-                let k: Raw = k.into();
+            Some(sled::Event::Remove{key}) => {
+                let k: Raw = key.into();
                 Some(Ok(Event::Remove(k)))
             }
         }
@@ -208,8 +208,8 @@ impl<'a, K: Key<'a>, V: Value> Bucket<'a, K, V> {
 
         match result {
             Ok(x) => Ok(x),
-            Err(sled::TransactionError::Abort(x)) => Err(x),
-            Err(sled::TransactionError::Storage(e)) => Err(e.into()),
+            Err(sled::transaction::TransactionError::Abort(x)) => Err(x),
+            Err(sled::transaction::TransactionError::Storage(e)) => Err(e.into()),
         }
     }
 

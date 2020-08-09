@@ -166,11 +166,11 @@ impl Value for Raw {
 
 impl Value for std::sync::Arc<[u8]> {
     fn to_raw_value(&self) -> Result<Raw, Error> {
-        Ok(self.clone().into())
+        Ok(self.as_ref().into())
     }
 
     fn from_raw_value(r: Raw) -> Result<Self, Error> {
-        Ok(r.into())
+        Ok(r.as_ref().into())
     }
 }
 

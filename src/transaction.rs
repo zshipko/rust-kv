@@ -3,19 +3,19 @@ use std::marker::PhantomData;
 use crate::{Batch, Error, Key, Value};
 
 /// Transaction error
-pub type TransactionError<E> = sled::ConflictableTransactionError<E>;
+pub type TransactionError<E> = sled::transaction::ConflictableTransactionError<E>;
 
 /// Transaction
 #[derive(Clone)]
 pub struct Transaction<'a, 'b, K: Key<'a>, V: Value>(
-    &'b sled::TransactionalTree,
+    &'b sled::transaction::TransactionalTree,
     PhantomData<K>,
     PhantomData<V>,
     PhantomData<&'a ()>,
 );
 
 impl<'a, 'b, K: Key<'a>, V: Value> Transaction<'a, 'b, K, V> {
-    pub(crate) fn new(t: &'b sled::TransactionalTree) -> Self {
+    pub(crate) fn new(t: &'b sled::transaction::TransactionalTree) -> Self {
         Transaction(t, PhantomData, PhantomData, PhantomData)
     }
 
@@ -54,8 +54,8 @@ impl<'a, 'b, K: Key<'a>, V: Value> Transaction<'a, 'b, K, V> {
     }
 
     /// Apply batch update
-    pub fn batch(&self, batch: Batch<K, V>) -> Result<(), TransactionError<Error>> {
-        self.0.apply_batch(batch.0)?;
+    pub fn batch(&self, batch: &Batch<K, V>) -> Result<(), TransactionError<Error>> {
+        self.0.apply_batch(&batch.0)?;
         Ok(())
     }
 }
