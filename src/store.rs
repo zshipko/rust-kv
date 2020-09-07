@@ -3,6 +3,7 @@ use std::path::Path;
 use crate::{Bucket, Config, Error, Key, Value};
 
 /// Store is used to read/write data to disk using `sled`
+#[derive(Clone, Debug)]
 pub struct Store {
     config: Config,
     db: sled::Db,
