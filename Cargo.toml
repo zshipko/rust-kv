@@ -1,6 +1,6 @@
 [package]
 name = "kv"
-version = "0.23.0"
+version = "0.22.0"
 authors = ["Zach Shipko <zachshipko@gmail.com>"]
 license = "ISC"
 keywords = ["key-value-store", "database", "sled"]
