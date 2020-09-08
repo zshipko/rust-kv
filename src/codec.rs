@@ -6,7 +6,7 @@ pub trait Codec<T: serde::Serialize + serde::de::DeserializeOwned>:
     Value + AsRef<T> + AsMut<T>
 {
     /// Convert back into inner value
-    fn to_inner(self) -> T;
+    fn into_inner(self) -> T;
 }
 
 #[macro_export]
@@ -29,7 +29,7 @@ macro_rules! codec {
         }
 
         impl<T: serde::Serialize + serde::de::DeserializeOwned> Codec<T> for $x<T> {
-            fn to_inner(self) -> T {
+            fn into_inner(self) -> T {
                 self.0
             }
         }

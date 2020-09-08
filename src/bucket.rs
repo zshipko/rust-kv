@@ -279,8 +279,8 @@ impl<'a, K: Key<'a>, V: Value> Batch<K, V> {
     }
 
     /// Set the value associated with the specified key to the provided value
-    pub fn set<X: Into<K>>(&mut self, key: X, value: &V) -> Result<(), Error> {
-        let v = value.to_raw_value()?;
+    pub fn set<X: Into<K>, Y: Into<V>>(&mut self, key: X, value: Y) -> Result<(), Error> {
+        let v = value.into().to_raw_value()?;
         self.0.insert(key.into().to_raw_key()?, v);
         Ok(())
     }
