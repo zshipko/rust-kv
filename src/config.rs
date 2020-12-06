@@ -27,6 +27,10 @@ pub struct Config {
     /// Specify the cache capacity
     #[serde(default)]
     pub cache_capacity: Option<u64>,
+
+    /// Specify the segment size for compatibility
+    #[serde(default)]
+    pub segment_size: Option<usize>,
 }
 
 impl Config {
@@ -38,6 +42,7 @@ impl Config {
             use_compression: false,
             flush_every_ms: None,
             cache_capacity: None,
+            segment_size: None,
         }
     }
 
@@ -97,6 +102,12 @@ impl Config {
         self
     }
 
+    /// Set cache capacity
+    pub fn segment_size(mut self, kb: usize) -> Config {
+        self.segment_size = Some(kb);
+        self
+    }
+
     pub(crate) fn open(&mut self) -> Result<sled::Db, Error> {
         let config = sled::Config::new()
             .path(&self.path)
@@ -106,6 +117,12 @@ impl Config {
         let config = if let Some(cache_capacity) = self.cache_capacity {
             config.cache_capacity(cache_capacity)
         } else {
+            config
+        };
+        let config = if let Some(segment_size) = self.segment_size {
+            // allow old database to work
+            config.segment_size(segment_size)
+        }  else {
             config
         };
         let db = config.open()?;
