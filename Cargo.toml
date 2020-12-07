@@ -19,7 +19,7 @@ thiserror = "1"
 toml = "0.5"
 serde = {version = "1", features = ["derive"]}
 serde_json = {version = "1", optional = true}
-rmp-serde = {version = "0.14", optional = true}
+rmp-serde = {version = "0.15", optional = true}
 bincode = {version = "1.3", optional = true}
 serde-lexpr = {version = "0.1", optional = true}
 
