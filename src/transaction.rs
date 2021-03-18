@@ -20,7 +20,7 @@ impl<'a, 'b, K: Key<'a>, V: Value> Transaction<'a, 'b, K, V> {
     }
 
     /// Get the value associated with the specified key
-    pub fn get<X: Into<K>>(&'a self, key: X) -> Result<Option<V>, TransactionError<Error>> {
+    pub fn get<X: Into<K>>(&self, key: X) -> Result<Option<V>, TransactionError<Error>> {
         let v = self
             .0
             .get(key.into().to_raw_key().map_err(TransactionError::Abort)?)?;

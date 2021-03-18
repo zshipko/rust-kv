@@ -138,13 +138,13 @@ impl<'a, K: Key<'a>, V: Value> Bucket<'a, K, V> {
     }
 
     /// Returns true if the bucket contains the given key
-    pub fn contains<X: Into<K>>(&'a self, key: X) -> Result<bool, Error> {
+    pub fn contains<X: Into<K>>(&self, key: X) -> Result<bool, Error> {
         let v = self.0.contains_key(key.into().to_raw_key()?)?;
         Ok(v)
     }
 
     /// Get the value associated with the specified key
-    pub fn get<X: Into<K>>(&'a self, key: X) -> Result<Option<V>, Error> {
+    pub fn get<X: Into<K>>(&self, key: X) -> Result<Option<V>, Error> {
         let v = self.0.get(key.into().to_raw_key()?)?;
 
         match v {
