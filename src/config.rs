@@ -24,7 +24,7 @@ pub struct Config {
     #[serde(default)]
     pub flush_every_ms: Option<u64>,
 
-    /// Specify the cache capacity
+    /// Specify the cache capacity in bytes
     #[serde(default)]
     pub cache_capacity: Option<u64>,
 
@@ -97,8 +97,8 @@ impl Config {
     }
 
     /// Set cache capacity
-    pub fn cache_capacity(mut self, ms: u64) -> Config {
-        self.cache_capacity = Some(ms);
+    pub fn cache_capacity(mut self, bytes: u64) -> Config {
+        self.cache_capacity = Some(bytes);
         self
     }
 
