@@ -257,15 +257,27 @@ impl<'a, K: Key<'a>, V: Value> Bucket<'a, K, V> {
         Ok(f)
     }
 
-    /// Pop the last item
+    /// Remove and return the last item
     pub fn pop_back(&self) -> Result<Option<Item<K, V>>, Error> {
         let x = self.0.pop_max()?;
         Ok(x.map(|(k, v)| Item(k, v, PhantomData, PhantomData)))
     }
 
-    /// Pop the first item
+    /// Remove and return the first item
     pub fn pop_front(&self) -> Result<Option<Item<K, V>>, Error> {
         let x = self.0.pop_min()?;
+        Ok(x.map(|(k, v)| Item(k, v, PhantomData, PhantomData)))
+    }
+
+    /// Get the first item
+    pub fn first(&self) -> Result<Option<Item<K, V>>, Error> {
+        let x = self.0.first()?;
+        Ok(x.map(|(k, v)| Item(k, v, PhantomData, PhantomData)))
+    }
+
+    /// Get the last item
+    pub fn last(&self) -> Result<Option<Item<K, V>>, Error> {
+        let x = self.0.last()?;
         Ok(x.map(|(k, v)| Item(k, v, PhantomData, PhantomData)))
     }
 
