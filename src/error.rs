@@ -10,6 +10,10 @@ pub enum Error {
     #[error("Error in Sled: {0}")]
     Sled(#[from] sled::Error),
 
+    /// Error when calling `Bucket::compare_and_swap`
+    #[error("Compare and swap error: {0}")]
+    CompareAndSwap(#[from] sled::CompareAndSwapError),
+
     /// An IO error
     #[error("IO error: {0}")]
     IO(#[from] io::Error),

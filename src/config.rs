@@ -1,8 +1,6 @@
 use std::path::{Path, PathBuf};
 use std::{fs, io};
 
-use toml;
-
 use crate::error::Error;
 use serde::{Deserialize, Serialize};
 
@@ -122,7 +120,7 @@ impl Config {
         let config = if let Some(segment_size) = self.segment_size {
             // allow old database to work
             config.segment_size(segment_size)
-        }  else {
+        } else {
             config
         };
         let db = config.open()?;

@@ -25,24 +25,30 @@
 //!     // A Bucket provides typed access to a section of the key/value store
 //!     let test = store.bucket::<Raw, Raw>(Some("test"))?;
 //!
-//!     // Set testing = 123
-//!     test.set(b"test", b"123")?;
-//!     assert!(test.get(b"test").unwrap().unwrap() == "123");
-//!     assert!(test.get(b"something else").unwrap() == None);
+//!     let key = Raw::from(b"test");
+//!     let value = Raw::from(b"123");
+//!
+//!     // Set test = 123
+//!     test.set(&key, &value)?;
+//!     assert!(test.get(&key).unwrap().unwrap() == value);
+//!     assert!(test.get(&b"something else".into()).unwrap() == None);
 //!
 //!     // Integer keys
 //!     let aaa = store.bucket::<Integer, String>(Some("aaa"))?;
-//!     aaa.set(1, "Testing");
+//!     let key = Integer::from(1);
+//!     let value = String::from("Testing");
+//!     aaa.set(&key, &value);
 //!
 //!     #[cfg(feature = "json-value")]
 //!     {
 //!         // Using a Json encoded type is easy, thanks to Serde
 //!         let bucket = store.bucket::<&str, Json<SomeType>>(None)?;
 //!
-//!         let x = SomeType {a: 1, b: 2};
-//!         bucket.set("example", Json(x))?;
+//!         let k = "example";
+//!         let x = Json(SomeType {a: 1, b: 2});
+//!         bucket.set(&k, &x)?;
 //!
-//!         let x: Json<SomeType> = bucket.get("example")?.unwrap();
+//!         let x: Json<SomeType> = bucket.get(&k)?.unwrap();
 //!
 //!         for item in bucket.iter() {
 //!             let item = item?;
@@ -53,9 +59,9 @@
 //!
 //!         // A transaction
 //!         bucket.transaction(|txn| {
-//!             txn.set("x", Json(SomeType {a: 1, b: 2}))?;
-//!             txn.set("y", Json(SomeType {a: 3, b: 4}))?;
-//!             txn.set("z", Json(SomeType {a: 5, b: 6}))?;
+//!             txn.set(&"x", &Json(SomeType {a: 1, b: 2}))?;
+//!             txn.set(&"y", &Json(SomeType {a: 3, b: 4}))?;
+//!             txn.set(&"z", &Json(SomeType {a: 5, b: 6}))?;
 //!
 //!             Ok(())
 //!         })?;

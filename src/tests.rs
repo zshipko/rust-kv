@@ -15,11 +15,13 @@ fn test_basic() {
     // Create a new store
     let cfg = Config::new(path.clone());
     let store = Store::new(cfg).unwrap();
-    let bucket = store.bucket::<&str, Raw>(None).unwrap();
+    let bucket = store.bucket::<Raw, Raw>(None).unwrap();
     assert!(path::Path::new(path.as_str()).exists());
 
-    bucket.set("testing", "abc123").unwrap();
-    assert_eq!(bucket.get("testing").unwrap().unwrap(), b"abc123");
+    let key = Raw::from("testing");
+    let value = Raw::from(b"abc123");
+    bucket.set(&key, &value).unwrap();
+    assert_eq!(bucket.get(&key).unwrap().unwrap(), b"abc123");
 }
 
 #[test]
@@ -31,9 +33,9 @@ fn test_integer_keys() {
     let bucket = store.bucket::<Integer, Raw>(None).unwrap();
     assert!(path::Path::new(path.as_str()).exists());
 
-    let key = 0x1234;
-    bucket.set(key, "abc123").unwrap();
-    assert_eq!(bucket.get(key).unwrap().unwrap(), b"abc123");
+    let key = Integer::from(0x1234);
+    bucket.set(&key, &Raw::from("abc123")).unwrap();
+    assert_eq!(bucket.get(&key).unwrap().unwrap(), b"abc123");
 }
 
 #[test]
@@ -46,7 +48,7 @@ fn test_iter() {
     assert!(path::Path::new(path.as_str()).exists());
 
     for i in 0..100 {
-        bucket.set(i, format!("{}", i)).unwrap();
+        bucket.set(&i.into(), &format!("{}", i)).unwrap();
     }
 
     let iter = bucket.iter();
@@ -76,17 +78,18 @@ fn test_msgpack_encoding() {
     let bucket = store.bucket::<&str, Msgpack<Testing>>(None).unwrap();
     assert!(path::Path::new(path.as_str()).exists());
 
+    let key = "testing";
     bucket
         .set(
-            "testing",
-            Msgpack(Testing {
+            &key,
+            &Msgpack(Testing {
                 a: 1,
                 b: "field".into(),
             }),
         )
         .unwrap();
 
-    let v = bucket.get("testing").unwrap();
+    let v = bucket.get(&key).unwrap();
     assert_eq!(
         v.unwrap().0,
         Testing {
@@ -113,17 +116,18 @@ fn test_json_encoding() {
     let bucket = store.bucket::<&str, Json<Testing>>(None).unwrap();
     assert!(path::Path::new(path.as_str()).exists());
 
+    let key = "testing";
     bucket
         .set(
-            "testing",
-            Json(Testing {
+            &key,
+            &Json(Testing {
                 a: 1,
                 b: "field".into(),
             }),
         )
         .unwrap();
 
-    let v = bucket.get("testing").unwrap();
+    let v = bucket.get(&key).unwrap();
     assert_eq!(
         v.unwrap().0,
         Testing {
@@ -150,17 +154,18 @@ fn test_bincode_encoding() {
     let bucket = store.bucket::<&str, Bincode<Testing>>(None).unwrap();
     assert!(path::Path::new(path.as_str()).exists());
 
+    let key = "testing";
     bucket
         .set(
-            "testing",
-            Bincode(Testing {
+            &key,
+            &Bincode(Testing {
                 a: 1,
                 b: "field".into(),
             }),
         )
         .unwrap();
 
-    let v = bucket.get("testing").unwrap();
+    let v = bucket.get(&key).unwrap();
     assert_eq!(
         v.unwrap().0,
         Testing {
@@ -187,17 +192,14 @@ fn test_sexpr_encoding() {
     let bucket = store.bucket::<&str, Lexpr<Testing>>(None).unwrap();
     assert!(path::Path::new(path.as_str()).exists());
 
-    bucket
-        .set(
-            "testing",
-            Lexpr(Testing {
-                a: 1,
-                b: "field".into(),
-            }),
-        )
-        .unwrap();
+    let key = "testing";
+    let value = Lexpr(Testing {
+        a: 1,
+        b: "field".into(),
+    });
 
-    let v = bucket.get("testing").unwrap();
+    bucket.set(&key, &value).unwrap();
+    let v = bucket.get(&key).unwrap();
     assert_eq!(
         v.unwrap().0,
         Testing {
@@ -223,9 +225,10 @@ fn test_watch() {
     let cfg = Config::new(path.clone());
     let store = Store::new(cfg).unwrap();
     let bucket = store.bucket::<&str, Raw>(Some("watch")).unwrap();
-    let mut watch = bucket.watch_prefix("").unwrap();
+    let mut watch = bucket.watch_prefix(None).unwrap();
 
-    bucket.set("abc", b"123").unwrap();
+    let key = "abc";
+    bucket.set(&key, &Raw::from(b"123")).unwrap();
 
     let next = watch.next().unwrap();
     let next = next.unwrap();
@@ -234,7 +237,7 @@ fn test_watch() {
     assert!(next.value().unwrap().unwrap() == b"123");
     assert!(next.key().unwrap() == "abc");
 
-    bucket.remove("abc").unwrap();
+    bucket.remove(&key).unwrap();
 
     let next = watch.next().unwrap();
     let next = next.unwrap();

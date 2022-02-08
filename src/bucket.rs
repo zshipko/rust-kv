@@ -36,14 +36,10 @@ impl<'a, K: Key<'a>, V> Iterator for Watch<K, V> {
     fn next(&mut self) -> Option<Self::Item> {
         match self.0.next() {
             None => None,
-            Some(sled::Event::Insert{key, value}) => {
-                let k: Raw = key.into();
-                Some(Ok(Event::Set(Item(k, value, PhantomData, PhantomData))))
+            Some(sled::Event::Insert { key, value }) => {
+                Some(Ok(Event::Set(Item(key, value, PhantomData, PhantomData))))
             }
-            Some(sled::Event::Remove{key}) => {
-                let k: Raw = key.into();
-                Some(Ok(Event::Remove(k)))
-            }
+            Some(sled::Event::Remove { key }) => Some(Ok(Event::Remove(key))),
         }
     }
 }
@@ -51,18 +47,12 @@ impl<'a, K: Key<'a>, V> Iterator for Watch<K, V> {
 impl<'a, K: Key<'a>, V: Value> Event<K, V> {
     /// Returns true when event is `Set`
     pub fn is_set(&self) -> bool {
-        match self {
-            Event::Set(_) => true,
-            _ => false,
-        }
+        matches!(self, Event::Set(_))
     }
 
     /// Returns true when event is `Remove`
     pub fn is_remove(&self) -> bool {
-        match self {
-            Event::Remove(_) => true,
-            _ => false,
-        }
+        matches!(self, Event::Remove(_))
     }
 
     /// Get event key
@@ -138,14 +128,14 @@ impl<'a, K: Key<'a>, V: Value> Bucket<'a, K, V> {
     }
 
     /// Returns true if the bucket contains the given key
-    pub fn contains<X: Into<K>>(&self, key: X) -> Result<bool, Error> {
-        let v = self.0.contains_key(key.into().to_raw_key()?)?;
+    pub fn contains(&self, key: &K) -> Result<bool, Error> {
+        let v = self.0.contains_key(key.to_raw_key()?)?;
         Ok(v)
     }
 
     /// Get the value associated with the specified key
-    pub fn get<X: Into<K>>(&self, key: X) -> Result<Option<V>, Error> {
-        let v = self.0.get(key.into().to_raw_key()?)?;
+    pub fn get(&self, key: &K) -> Result<Option<V>, Error> {
+        let v = self.0.get(key.to_raw_key()?)?;
 
         match v {
             None => Ok(None),
@@ -154,15 +144,38 @@ impl<'a, K: Key<'a>, V: Value> Bucket<'a, K, V> {
     }
 
     /// Set the value associated with the specified key to the provided value
-    pub fn set<X: Into<K>, Y: Into<V>>(&self, key: X, value: Y) -> Result<(), Error> {
-        let v = value.into().to_raw_value()?;
-        self.0.insert(key.into().to_raw_key()?, v)?;
+    pub fn set(&self, key: &K, value: &V) -> Result<(), Error> {
+        let v = value.to_raw_value()?;
+        self.0.insert(key.to_raw_key()?, v)?;
         Ok(())
     }
 
+    /// Set the value associated with the specified key to the provided value, only if the existing
+    /// value matches the `old` parameter
+    pub fn compare_and_swap(
+        &self,
+        key: &K,
+        old: Option<&V>,
+        value: Option<&V>,
+    ) -> Result<(), Error> {
+        let old = match old {
+            Some(x) => Some(x.to_raw_value()?),
+            None => None,
+        };
+
+        let value = match value {
+            Some(x) => Some(x.to_raw_value()?),
+            None => None,
+        };
+
+        let a = self.0.compare_and_swap(key.to_raw_key()?, old, value)?;
+
+        Ok(a?)
+    }
+
     /// Remove the value associated with the specified key from the database
-    pub fn remove<X: Into<K>>(&self, key: X) -> Result<(), Error> {
-        self.0.remove(key.into().to_raw_key()?)?;
+    pub fn remove(&self, key: &K) -> Result<(), Error> {
+        self.0.remove(key.to_raw_key()?)?;
         Ok(())
     }
 
@@ -172,16 +185,16 @@ impl<'a, K: Key<'a>, V: Value> Bucket<'a, K, V> {
     }
 
     /// Get an iterator over keys/values in the specified range
-    pub fn iter_range<X: Into<K>>(&self, a: X, b: X) -> Iter<K, V> {
-        let a = a.into();
-        let b = b.into();
-        Iter(self.0.range(a..b), PhantomData, PhantomData)
+    pub fn iter_range(&self, a: &K, b: &K) -> Result<Iter<K, V>, Error> {
+        let a = a.to_raw_key()?;
+        let b = b.to_raw_key()?;
+        Ok(Iter(self.0.range(a..b), PhantomData, PhantomData))
     }
 
     /// Iterate over keys/values with the specified prefix
-    pub fn iter_prefix<X: Into<K>>(&self, a: X) -> Iter<K, V> {
-        let a = a.into();
-        Iter(self.0.scan_prefix(a), PhantomData, PhantomData)
+    pub fn iter_prefix(&self, a: &K) -> Result<Iter<K, V>, Error> {
+        let a = a.to_raw_key()?;
+        Ok(Iter(self.0.scan_prefix(a), PhantomData, PhantomData))
     }
 
     /// Apply batch update
@@ -191,13 +204,21 @@ impl<'a, K: Key<'a>, V: Value> Bucket<'a, K, V> {
     }
 
     /// Get updates when a key with the given prefix is changed
-    pub fn watch_prefix<X: Into<K>>(&self, prefix: X) -> Result<Watch<K, V>, Error> {
-        let w = self.0.watch_prefix(prefix.into());
+    pub fn watch_prefix(&self, prefix: Option<&K>) -> Result<Watch<K, V>, Error> {
+        let k = match prefix {
+            Some(k) => k.to_raw_key()?,
+            None => b"".into(),
+        };
+        let w = self.0.watch_prefix(k);
         Ok(Watch(w, PhantomData, PhantomData))
     }
 
     /// Execute a transaction
-    pub fn transaction<A, E: From<sled::Error>, F: Fn(Transaction<K, V>) -> Result<A, TransactionError<E>>>(
+    pub fn transaction<
+        A,
+        E: From<sled::Error>,
+        F: Fn(Transaction<K, V>) -> Result<A, TransactionError<E>>,
+    >(
         &self,
         f: F,
     ) -> Result<A, E> {
@@ -214,15 +235,14 @@ impl<'a, K: Key<'a>, V: Value> Bucket<'a, K, V> {
     }
 
     /// Get previous key and value in order, if one exists
-    pub fn prev_key<X: Into<K>>(&self, key: X) -> Result<Option<Item<K, V>>, Error> {
-        let item = self.0.get_lt(key.into())?;
+    pub fn prev_key(&self, key: &K) -> Result<Option<Item<K, V>>, Error> {
+        let item = self.0.get_lt(key)?;
         Ok(item.map(|(k, v)| Item(k, v, PhantomData, PhantomData)))
     }
 
-
     /// Get next key and value in order, if one exists
-    pub fn next_key<X: Into<K>>(&self, key: X) -> Result<Option<Item<K, V>>, Error> {
-        let item = self.0.get_gt(key.into())?;
+    pub fn next_key(&self, key: &K) -> Result<Option<Item<K, V>>, Error> {
+        let item = self.0.get_gt(key)?;
         Ok(item.map(|(k, v)| Item(k, v, PhantomData, PhantomData)))
     }
 
@@ -237,16 +257,27 @@ impl<'a, K: Key<'a>, V: Value> Bucket<'a, K, V> {
         Ok(f)
     }
 
-    /// Pop the last item
+    /// Remove and return the last item
     pub fn pop_back(&self) -> Result<Option<Item<K, V>>, Error> {
         let x = self.0.pop_max()?;
         Ok(x.map(|(k, v)| Item(k, v, PhantomData, PhantomData)))
     }
 
-
-    /// Pop the first item
+    /// Remove and return the first item
     pub fn pop_front(&self) -> Result<Option<Item<K, V>>, Error> {
         let x = self.0.pop_min()?;
+        Ok(x.map(|(k, v)| Item(k, v, PhantomData, PhantomData)))
+    }
+
+    /// Get the first item
+    pub fn first(&self) -> Result<Option<Item<K, V>>, Error> {
+        let x = self.0.first()?;
+        Ok(x.map(|(k, v)| Item(k, v, PhantomData, PhantomData)))
+    }
+
+    /// Get the last item
+    pub fn last(&self) -> Result<Option<Item<K, V>>, Error> {
+        let x = self.0.last()?;
         Ok(x.map(|(k, v)| Item(k, v, PhantomData, PhantomData)))
     }
 
@@ -272,6 +303,12 @@ impl<'a, K: Key<'a>, V: Value> Bucket<'a, K, V> {
     }
 }
 
+impl<'a, K: Key<'a>, V: Value> Default for Batch<K, V> {
+    fn default() -> Self {
+        Batch::new()
+    }
+}
+
 impl<'a, K: Key<'a>, V: Value> Batch<K, V> {
     /// Create a new Batch instance
     pub fn new() -> Batch<K, V> {
@@ -279,15 +316,15 @@ impl<'a, K: Key<'a>, V: Value> Batch<K, V> {
     }
 
     /// Set the value associated with the specified key to the provided value
-    pub fn set<X: Into<K>, Y: Into<V>>(&mut self, key: X, value: Y) -> Result<(), Error> {
-        let v = value.into().to_raw_value()?;
-        self.0.insert(key.into().to_raw_key()?, v);
+    pub fn set(&mut self, key: &K, value: &V) -> Result<(), Error> {
+        let v = value.to_raw_value()?;
+        self.0.insert(key.to_raw_key()?, v);
         Ok(())
     }
 
     /// Remove the value associated with the specified key from the database
-    pub fn remove<X: Into<K>>(&mut self, key: X) -> Result<(), Error> {
-        self.0.remove(key.into().to_raw_key()?);
+    pub fn remove(&mut self, key: &K) -> Result<(), Error> {
+        self.0.remove(key.to_raw_key()?);
         Ok(())
     }
 }
