@@ -20,10 +20,10 @@ impl<'a, 'b, K: Key<'a>, V: Value> Transaction<'a, 'b, K, V> {
     }
 
     /// Get the value associated with the specified key
-    pub fn get<X: Into<K>>(&self, key: X) -> Result<Option<V>, TransactionError<Error>> {
+    pub fn get(&self, key: &K) -> Result<Option<V>, TransactionError<Error>> {
         let v = self
             .0
-            .get(key.into().to_raw_key().map_err(TransactionError::Abort)?)?;
+            .get(key.to_raw_key().map_err(TransactionError::Abort)?)?;
 
         match v {
             None => Ok(None),
@@ -32,24 +32,17 @@ impl<'a, 'b, K: Key<'a>, V: Value> Transaction<'a, 'b, K, V> {
     }
 
     /// Set the value associated with the specified key to the provided value
-    pub fn set<X: Into<K>, Y: Into<V>>(
-        &self,
-        key: X,
-        value: Y,
-    ) -> Result<(), TransactionError<Error>> {
-        let v = value
-            .into()
-            .to_raw_value()
-            .map_err(TransactionError::Abort)?;
+    pub fn set(&self, key: &K, value: &V) -> Result<(), TransactionError<Error>> {
+        let v = value.to_raw_value().map_err(TransactionError::Abort)?;
         self.0
-            .insert(key.into().to_raw_key().map_err(TransactionError::Abort)?, v)?;
+            .insert(key.to_raw_key().map_err(TransactionError::Abort)?, v)?;
         Ok(())
     }
 
     /// Remove the value associated with the specified key from the database
-    pub fn remove<X: Into<K>>(&self, key: X) -> Result<(), TransactionError<Error>> {
+    pub fn remove(&self, key: &K) -> Result<(), TransactionError<Error>> {
         self.0
-            .remove(key.into().to_raw_key().map_err(TransactionError::Abort)?)?;
+            .remove(key.to_raw_key().map_err(TransactionError::Abort)?)?;
         Ok(())
     }
 
