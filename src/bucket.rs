@@ -37,13 +37,9 @@ impl<'a, K: Key<'a>, V> Iterator for Watch<K, V> {
         match self.0.next() {
             None => None,
             Some(sled::Event::Insert { key, value }) => {
-                let k: Raw = key.into();
-                Some(Ok(Event::Set(Item(k, value, PhantomData, PhantomData))))
+                Some(Ok(Event::Set(Item(key, value, PhantomData, PhantomData))))
             }
-            Some(sled::Event::Remove { key }) => {
-                let k: Raw = key.into();
-                Some(Ok(Event::Remove(k)))
-            }
+            Some(sled::Event::Remove { key }) => Some(Ok(Event::Remove(key))),
         }
     }
 }
@@ -51,18 +47,12 @@ impl<'a, K: Key<'a>, V> Iterator for Watch<K, V> {
 impl<'a, K: Key<'a>, V: Value> Event<K, V> {
     /// Returns true when event is `Set`
     pub fn is_set(&self) -> bool {
-        match self {
-            Event::Set(_) => true,
-            _ => false,
-        }
+        matches!(self, Event::Set(_))
     }
 
     /// Returns true when event is `Remove`
     pub fn is_remove(&self) -> bool {
-        match self {
-            Event::Remove(_) => true,
-            _ => false,
-        }
+        matches!(self, Event::Remove(_))
     }
 
     /// Get event key
@@ -275,6 +265,12 @@ impl<'a, K: Key<'a>, V: Value> Bucket<'a, K, V> {
     /// CRC32 checksum of all keys and values
     pub fn checksum(&self) -> Result<u32, Error> {
         Ok(self.0.checksum()?)
+    }
+}
+
+impl<'a, K: Key<'a>, V: Value> Default for Batch<K, V> {
+    fn default() -> Self {
+        Batch::new()
     }
 }
 

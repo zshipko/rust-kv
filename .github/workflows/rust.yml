@@ -1,0 +1,62 @@
+name: Rust
+
+on:
+  push:
+    branches: [ master, rewrite ]
+  pull_request:
+    branches: [ master ]
+
+jobs:
+  linux:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Run tests
+      run: cargo test --verbose --all-features
+  macos:
+    runs-on: macos-latest
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Run tests
+      run: cargo test --verbose --all-features
+  linux_nightly:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Nightly
+      run: rustup toolchain install nightly
+
+    - name: Run tests
+      run: cargo +nightly test --verbose --all-features
+  macos_nightly:
+    runs-on: macos-latest
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Nightly
+      run: rustup toolchain install nightly
+
+    - name: Run tests
+      run: cargo +nightly test --verbose --all-features
+  linux_no_default_features:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Run tests
+      run: cargo test --no-default-features --verbose
+  clippy:
+    runs-on: ubuntu-20.04
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Nightly
+      run: rustup toolchain install nightly --profile=default
+
+    - name: Run tests
+      run: cargo +nightly clippy --all
+
+
