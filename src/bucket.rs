@@ -150,6 +150,29 @@ impl<'a, K: Key<'a>, V: Value> Bucket<'a, K, V> {
         Ok(())
     }
 
+    /// Set the value associated with the specified key to the provided value, only if the existing
+    /// value matches the `old` parameter
+    pub fn compare_and_swap(
+        &self,
+        key: &K,
+        old: Option<&V>,
+        value: Option<&V>,
+    ) -> Result<(), Error> {
+        let old = match old {
+            Some(x) => Some(x.to_raw_value()?),
+            None => None,
+        };
+
+        let value = match value {
+            Some(x) => Some(x.to_raw_value()?),
+            None => None,
+        };
+
+        let a = self.0.compare_and_swap(key.to_raw_key()?, old, value)?;
+
+        Ok(a?)
+    }
+
     /// Remove the value associated with the specified key from the database
     pub fn remove(&self, key: &K) -> Result<(), Error> {
         self.0.remove(key.to_raw_key()?)?;

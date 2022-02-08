@@ -36,6 +36,7 @@ impl<'a, 'b, K: Key<'a>, V: Value> Transaction<'a, 'b, K, V> {
         let v = value.to_raw_value().map_err(TransactionError::Abort)?;
         self.0
             .insert(key.to_raw_key().map_err(TransactionError::Abort)?, v)?;
+
         Ok(())
     }
 
