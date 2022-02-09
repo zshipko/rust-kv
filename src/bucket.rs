@@ -1,5 +1,7 @@
 use std::marker::PhantomData;
 
+use sled::Transactional;
+
 use crate::{Error, Key, Raw, Transaction, TransactionError, Value};
 
 /// Provides typed access to the key/value store
@@ -225,6 +227,64 @@ impl<'a, K: Key<'a>, V: Value> Bucket<'a, K, V> {
         let result = self.0.transaction(|t| {
             let txn = Transaction::new(t);
             f(txn)
+        });
+
+        match result {
+            Ok(x) => Ok(x),
+            Err(sled::transaction::TransactionError::Abort(x)) => Err(x),
+            Err(sled::transaction::TransactionError::Storage(e)) => Err(e.into()),
+        }
+    }
+
+    /// Create a transaction with access to two buckets
+    pub fn transaction2<
+        A,
+        T: Key<'a>,
+        U: Value,
+        E: From<sled::Error>,
+        F: Fn(Transaction<K, V>, Transaction<T, U>) -> Result<A, TransactionError<E>>,
+    >(
+        &self,
+        other: &Bucket<'a, T, U>,
+        f: F,
+    ) -> Result<A, E> {
+        let result = (&self.0, &other.0).transaction(|(a, b)| {
+            let a = Transaction::new(a);
+            let b = Transaction::new(b);
+            f(a, b)
+        });
+
+        match result {
+            Ok(x) => Ok(x),
+            Err(sled::transaction::TransactionError::Abort(x)) => Err(x),
+            Err(sled::transaction::TransactionError::Storage(e)) => Err(e.into()),
+        }
+    }
+
+    /// Create a transaction with access to three buckets
+    pub fn transaction3<
+        A,
+        T: Key<'a>,
+        U: Value,
+        X: Key<'a>,
+        Y: Value,
+        E: From<sled::Error>,
+        F: Fn(
+            Transaction<K, V>,
+            Transaction<T, U>,
+            Transaction<X, Y>,
+        ) -> Result<A, TransactionError<E>>,
+    >(
+        &self,
+        other: &Bucket<'a, T, U>,
+        other1: &Bucket<'a, X, Y>,
+        f: F,
+    ) -> Result<A, E> {
+        let result = (&self.0, &other.0, &other1.0).transaction(|(a, b, c)| {
+            let a = Transaction::new(a);
+            let b = Transaction::new(b);
+            let c = Transaction::new(c);
+            f(a, b, c)
         });
 
         match result {
