@@ -146,10 +146,14 @@ impl<'a, K: Key<'a>, V: Value> Bucket<'a, K, V> {
     }
 
     /// Set the value associated with the specified key to the provided value
-    pub fn set(&self, key: &K, value: &V) -> Result<(), Error> {
+    pub fn set(&self, key: &K, value: &V) -> Result<Option<V>, Error> {
         let v = value.to_raw_value()?;
-        self.0.insert(key.to_raw_key()?, v)?;
-        Ok(())
+        Ok(self
+            .0
+            .insert(key.to_raw_key()?, v)?
+            .map(|x| V::from_raw_value(x))
+            // https://users.rust-lang.org/t/convenience-method-for-flipping-option-result-to-result-option/13695/7
+            .map_or(Ok(None), |v| v.map(Some))?)
     }
 
     /// Set the value associated with the specified key to the provided value, only if the existing
@@ -176,9 +180,13 @@ impl<'a, K: Key<'a>, V: Value> Bucket<'a, K, V> {
     }
 
     /// Remove the value associated with the specified key from the database
-    pub fn remove(&self, key: &K) -> Result<(), Error> {
-        self.0.remove(key.to_raw_key()?)?;
-        Ok(())
+    pub fn remove(&self, key: &K) -> Result<Option<V>, Error> {
+        Ok(self
+            .0
+            .remove(key.to_raw_key()?)?
+            .map(|x| V::from_raw_value(x))
+            // https://users.rust-lang.org/t/convenience-method-for-flipping-option-result-to-result-option/13695/7
+            .map_or(Ok(None), |v| v.map(Some))?)
     }
 
     /// Get an iterator over keys/values
