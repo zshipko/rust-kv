@@ -32,19 +32,24 @@ impl<'a, 'b, K: Key<'a>, V: Value> Transaction<'a, 'b, K, V> {
     }
 
     /// Set the value associated with the specified key to the provided value
-    pub fn set(&self, key: &K, value: &V) -> Result<(), TransactionError<Error>> {
+    pub fn set(&self, key: &K, value: &V) -> Result<Option<V>, TransactionError<Error>> {
         let v = value.to_raw_value().map_err(TransactionError::Abort)?;
-        self.0
-            .insert(key.to_raw_key().map_err(TransactionError::Abort)?, v)?;
-
-        Ok(())
+        Ok(self
+            .0
+            .insert(key.to_raw_key().map_err(TransactionError::Abort)?, v)?
+            .map(|x| V::from_raw_value(x).map_err(TransactionError::Abort))
+            // https://users.rust-lang.org/t/convenience-method-for-flipping-option-result-to-result-option/13695/7
+            .map_or(Ok(None), |v| v.map(Some))?)
     }
 
     /// Remove the value associated with the specified key from the database
-    pub fn remove(&self, key: &K) -> Result<(), TransactionError<Error>> {
-        self.0
-            .remove(key.to_raw_key().map_err(TransactionError::Abort)?)?;
-        Ok(())
+    pub fn remove(&self, key: &K) -> Result<Option<V>, TransactionError<Error>> {
+        Ok(self
+            .0
+            .remove(key.to_raw_key().map_err(TransactionError::Abort)?)?
+            .map(|x| V::from_raw_value(x).map_err(TransactionError::Abort))
+            // https://users.rust-lang.org/t/convenience-method-for-flipping-option-result-to-result-option/13695/7
+            .map_or(Ok(None), |v| v.map(Some))?)
     }
 
     /// Apply batch update
