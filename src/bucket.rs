@@ -1,4 +1,8 @@
+use pin_project_lite::pin_project;
+use std::future::Future;
 use std::marker::PhantomData;
+use std::pin::Pin;
+use std::task::{Context, Poll};
 
 use sled::Transactional;
 
@@ -21,8 +25,14 @@ pub struct Item<K, V>(Raw, Raw, PhantomData<K>, PhantomData<V>);
 #[derive(Clone)]
 pub struct Batch<K, V>(pub(crate) sled::Batch, PhantomData<K>, PhantomData<V>);
 
-/// Subscribe to key updated
-pub struct Watch<K, V>(sled::Subscriber, PhantomData<K>, PhantomData<V>);
+pin_project! {
+    /// Subscribe to key updated
+    pub struct Watch<K, V> {
+        #[pin]
+        subscriber: sled::Subscriber,
+        phantom: PhantomData<(K, V)>
+    }
+}
 
 /// Event is used to describe the type of update
 pub enum Event<K, V> {
@@ -32,16 +42,35 @@ pub enum Event<K, V> {
     Remove(Raw),
 }
 
+impl<'a, K: Key<'a>, V> Event<K, V> {
+    fn from_sled(event: sled::Event) -> Self {
+        match event {
+            sled::Event::Insert { key, value } => {
+                Event::Set(Item(key, value, PhantomData, PhantomData))
+            }
+            sled::Event::Remove { key } => Event::Remove(key),
+        }
+    }
+}
+
 impl<'a, K: Key<'a>, V> Iterator for Watch<K, V> {
     type Item = Result<Event<K, V>, Error>;
 
     fn next(&mut self) -> Option<Self::Item> {
-        match self.0.next() {
+        match self.subscriber.next() {
             None => None,
-            Some(sled::Event::Insert { key, value }) => {
-                Some(Ok(Event::Set(Item(key, value, PhantomData, PhantomData))))
-            }
-            Some(sled::Event::Remove { key }) => Some(Ok(Event::Remove(key))),
+            Some(e) => Some(Ok(Event::from_sled(e))),
+        }
+    }
+}
+
+impl<'a, K: Key<'a>, V> Future for Watch<K, V> {
+    type Output = Option<Event<K, V>>;
+    fn poll(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
+        let this = self.project();
+        match this.subscriber.poll(cx) {
+            Poll::Pending => Poll::Pending,
+            Poll::Ready(r) => Poll::Ready(r.map(Event::from_sled)),
         }
     }
 }
@@ -219,8 +248,11 @@ impl<'a, K: Key<'a>, V: Value> Bucket<'a, K, V> {
             Some(k) => k.to_raw_key()?,
             None => b"".into(),
         };
-        let w = self.0.watch_prefix(k);
-        Ok(Watch(w, PhantomData, PhantomData))
+        let subscriber = self.0.watch_prefix(k);
+        Ok(Watch {
+            subscriber,
+            phantom: PhantomData {},
+        })
     }
 
     /// Execute a transaction
