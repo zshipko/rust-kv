@@ -57,4 +57,9 @@ impl<'a, 'b, K: Key<'a>, V: Value> Transaction<'a, 'b, K, V> {
         self.0.apply_batch(&batch.0)?;
         Ok(())
     }
+
+    /// Generate a monotonic ID. Not guaranteed to be contiguous or idempotent, can produce different values in the same transaction in case of conflicts
+    pub fn generate_id(&self) -> Result<u64, TransactionError<Error>> {
+        Ok(self.0.generate_id()?)
+    }
 }
