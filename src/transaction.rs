@@ -31,6 +31,14 @@ impl<'a, 'b, K: Key<'a>, V: Value> Transaction<'a, 'b, K, V> {
         }
     }
 
+    /// Returns true if the bucket contains the given key
+    pub fn contains(&self, key: &K) -> Result<bool, TransactionError<Error>> {
+        let v = self
+            .0
+            .get(key.to_raw_key().map_err(TransactionError::Abort)?)?;
+        Ok(v.is_some())
+    }
+
     /// Set the value associated with the specified key to the provided value
     pub fn set(&self, key: &K, value: &V) -> Result<Option<V>, TransactionError<Error>> {
         let v = value.to_raw_value().map_err(TransactionError::Abort)?;
