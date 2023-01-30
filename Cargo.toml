@@ -16,7 +16,7 @@ all-features = true
 [dependencies]
 sled = "0.34"
 thiserror = "1"
-toml = "0.5"
+toml = "0.7"
 pin-project-lite = "0.2"
 serde = {version = "1", features = ["derive"]}
 serde_json = {version = "1", optional = true}
